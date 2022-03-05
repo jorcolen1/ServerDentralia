@@ -98,14 +98,14 @@ app.post('/webhook',async(request,response)=>{
    const tipoRequest=payload.type;
    var userEmail='',userValor='',utcSeconds='',userDate='',itemsBuy='';
   if (tipoRequest === "checkout.session.completed"){
-    //console.log('el payload: ',JSON.stringify(payload));
+    console.log('el payload: ',JSON.stringify(payload));
     userEmail=payload.data.object.customer_details.email;
     userValor=payload.data.object.amount_total;
     utcSeconds=payload.created;
     userDate= new Date(utcSeconds*1000);
     itemsBuy=payload.data.object.metadata;
-    //GuardarPedido(itemsBuy);
-    //Guardartransaccion(itemsBuy);
+    GuardarPedido(itemsBuy);
+    Guardartransaccion(itemsBuy);
     contentHTML =`
     <h1>Informacion de pago Realizado</h1>
     <ul>
