@@ -12,7 +12,7 @@ app.use(cors());
 //app.use(express.urlencoded({extended: false}));
 app.use(express.json());//servidor entiende datos en formato JSON
 
-const YOUR_DOMAIN = 'http://localhost:5500/Subpages';
+const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/Subpages';
 app.get('/', (req, res) => {
   res.send("hi!")
 })
