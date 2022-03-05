@@ -212,5 +212,7 @@ app.post('/create-checkout-session', async (req, res) => {
   //res.redirect(303, session.url);
   res.json({id:session.id})
 });
+const PORT = process.env.PORT || 4242
+const server = app.listen(PORT, () => console.log(`Running on port ${PORT}`));
+ 
 
-app.listen(4242, () => console.log('Running on port 4242'));
