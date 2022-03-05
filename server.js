@@ -5,7 +5,7 @@ const cors = require('cors')
 const nodemailer =require('nodemailer');
 const res = require('express/lib/response');
 const {db}=require('./firebase')
-
+//comment
 const app = express();
 app.use(express.static('public'));
 app.use(cors());
