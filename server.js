@@ -27,6 +27,7 @@ async function GuardarPedido(itemsBuy){
   let ItemsMeta=JSON.parse(itemsBuy[0]);
   let UserEmailPedido = ItemsMeta.email;
   let UserUidPedido = ItemsMeta.uid;
+  console.log("El id de User es:",UserUidPedido)
   delete ItemsMeta.email;
   delete ItemsMeta.uid;
 
@@ -38,6 +39,7 @@ async function GuardarPedido(itemsBuy){
 
   console.log(ItemsMeta)
   console.log("id de productos-->>",NumObjet)
+
   let objet_Individual= '';
   for(var i=0; i<NumObjet.length ; i++){//agregar los atributos de fechas de compra
     objet_Individual=ItemsMeta[NumObjet[i]];
