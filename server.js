@@ -106,8 +106,8 @@ app.post('/webhook',async(request,response)=>{
     utcSeconds=payload.created;
     userDate= new Date(utcSeconds*1000);
     itemsBuy=payload.data.object.metadata;
-    GuardarPedido(itemsBuy);
-    Guardartransaccion(itemsBuy);
+    //GuardarPedido(itemsBuy);
+    //Guardartransaccion(itemsBuy);
     contentHTML =`
     <h1>Informacion de pago Realizado</h1>
     <ul>
@@ -197,6 +197,7 @@ app.post('/create-checkout-session', async (req, res) => {
   let UserUid = req.body.uid;
   delete req.body.email;
   delete req.body.uid;
+  delete req.body.address;
   let ArrayTtems= toArraycarrito(req.body);
   //console.log("el contenido del array",itemsBuy)
   //console.log("el contenido del array",ArrayTtems)
