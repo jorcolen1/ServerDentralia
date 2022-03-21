@@ -22,60 +22,184 @@ app.get('/a',async(req,res)=>{
   console.log(querySnapshot.docs[0].data())
   res.send("hello <h3>y</h3>")
 })
+function DirecciondeEnvio(ArrayDirec) {
+  let NumObjet = Object.keys(ArrayDirec);
+  for(var i=0; i<NumObjet.length ; i++){
+    let objet_Individual=ArrayDirec[NumObjet[i]];
 
-async function GuardarPedido(itemsBuy){
+    //console.log(i,objet_Individual.selected)
+
+    if(objet_Individual.selected === true){
+      //console.log("Objet_Individual",objet_Individual)
+      return objet_Individual;
+    }
+  }
+}
+async function traerDireccion(UserUidPedido){
+  //const DirecValidation = doc(db, "Users", UserUidPedido);
+  //const doc = db.collection('Users').doc(UserUidPedido);
+  const cityRef = db.collection('Users').doc(UserUidPedido);
+  doc = await cityRef.get()
+    //console.log("los datos son",doc.data())
+    const User = doc.data();
+    User.id = doc.id;
+    
+    let DireccionDefaul=DirecciondeEnvio(User.direcciones)
+      //console.log("direccion completaaaaaaaaaa")
+      return DireccionDefaul;
+
+}
+async function SendConfirSellers(emailSeller,Contenido,DireccionDefaul,userDate){
+
+  console.log("Correo del vendedor de cada producto",emailSeller )
+  console.log('Datos de cada producto--->>>',Contenido)
+  console.log('Datos direccion de envio--->>>',DireccionDefaul)
+  let total = Contenido.precio*Contenido.cantidad;
+  contentHTML =`
+  <h1>Informacion de pago Realizado</h1>
+  <ul>Producto:
+  <li>Id: ${Contenido.id}</li>
+  <li>Nombre: ${Contenido.name}</li>
+  <li>Precio unidad: € ${Contenido.precio}</li>
+  <li>Cantidad: ${Contenido.cantidad}</li>
+  <li>Total: € ${total}</li>
+  <br>
+  <li>Fecha de pago: ${userDate.toLocaleString()}</li>
+  </ul>
+  <ul>Envio:
+    <li>Receptor de envío: ${DireccionDefaul.nombre} ${DireccionDefaul.apellidos} </li>
+    <li>Dirección de envío: ${DireccionDefaul.calle} ${DireccionDefaul.numero} , ${DireccionDefaul.ciudad} ${DireccionDefaul.cpcode} , ${DireccionDefaul.provincia}</li>
+    <li>Indicaciones de envío: ${DireccionDefaul.indicaciones} movil:${DireccionDefaul.telefono}</li>
+  </ul>
+  `;
+   const transporter = nodemailer.createTransport({
+    /*host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+    port:465,//587,
+    segure: true,//par no ssl
+    auth:{
+      user:'vestazproducts@gmail.com',
+      pass:'hzxdstbjhtemkqgk'
+    },*/
+    //.......dev
+    host:'smtp.ethereal.email',//servidor smtp
+    port:587,
+    segure: false,//par no ssl
+    auth:{
+      user:'jenifer.lowe82@ethereal.email',
+      pass:'MRVfC1DCT3mY5N5wTk'
+    },
+    tls:{
+     // rejectUnauthorized:false
+    }
+  });
+  var mailconten ={
+    from:"'Vesta-Z Pedidos'<pedidos@vestaz.es>",
+    to: emailSeller ,//userEmail,
+    subject: 'Reporte de pago',
+    //text:'hello word',
+    html:contentHTML,
+  };
+  
+  const info= await transporter.sendMail(mailconten,(error,info)=>{ 
+    if (error){
+    res.status(500).send(error.message);
+  }else{
+    console.log('mail enviado.');
+    res.status(200).jsonp(tipoRequest)
+  }
+
+  
+})
+
+
+}
+async function GuardarPedido(itemsBuy,userDate){
   let ItemsMeta=JSON.parse(itemsBuy[0]);
   let UserEmailPedido = ItemsMeta.email;
   let UserUidPedido = ItemsMeta.uid;
-  console.log("El id de User es:",UserUidPedido)
   delete ItemsMeta.email;
   delete ItemsMeta.uid;
+  let DireccionDefaul= await traerDireccion(UserUidPedido)
+  //console.log("direccion Valida",DireccionDefaul)
 
   let tiempoTranscurrido= Date.now();
   //let datePayUnixUTC = datePay.getTime();
-  let datePayHum = new Date(tiempoTranscurrido+3600000)
+  let datePayHum = new Date(tiempoTranscurrido)
+  datePayGood= datePayHum.toLocaleDateString()+" "+datePayHum.toLocaleTimeString();
 
+  console.log(datePayGood);
   let NumObjet = Object.keys(ItemsMeta);
 
-  console.log(ItemsMeta)
-  console.log("id de productos-->>",NumObjet)
-
+  //console.log("los Datos del pedido",ItemsMeta)
+  //console.log("id de productos-->>",NumObjet)
   let objet_Individual= '';
+  let objet_Individual2= '';
   for(var i=0; i<NumObjet.length ; i++){//agregar los atributos de fechas de compra
     objet_Individual=ItemsMeta[NumObjet[i]];
-    const estado = {estado: "comprado",FechaPagoUnix:tiempoTranscurrido,FechaPago:datePayHum.toUTCString()};
+    const estado = {
+      estado: "Comprado",
+      FechaPagoUnix:tiempoTranscurrido,
+      FechaPago:datePayGood,
+      uidPedidoUser:UserUidPedido,
+      address: DireccionDefaul 
+    };
     let ItemsMetaState = Object.assign(objet_Individual,estado)
     ItemsMeta[NumObjet[i]]=ItemsMetaState;
+    console.log("objeto-->>>",i,ItemsMetaState)
   }
 
-  for(var j=0; j<NumObjet.length ; j++){ //agregar la funcion de resta de la compra 
+  let irespTransacGlobal = await db.collection('Users').doc(UserUidPedido).collection('Pedidos').add(ItemsMeta);//Guarda Todos los pedidos id Auto
+  let idTransacGlobal=irespTransacGlobal.id;
+  console.log("idTransacGlobal:",idTransacGlobal)
 
+  for(var j=0; j<NumObjet.length ; j++){ //agregar la funcion de resta de la compra 
     let restarCompraRef = db.collection('Productos').doc(NumObjet[j]);
     let doc = await restarCompraRef.get();
-    let stock =doc.data().cantidad;
-    let uidSeller =doc.data().uidSeller;
-    stock= stock-ItemsMeta[NumObjet[j]].cantidad;// control de sstock
-    console.log("",stock)
+    let stock=doc.data().cantidad;
+    let uidSeller=doc.data().uidSeller;
+    stock= stock-ItemsMeta[NumObjet[j]].cantidad;// control de stock
+    console.log("En Productos:",stock)
     let res1 = await restarCompraRef.update({
       cantidad: stock
     });
     
     let restarCompraRef2 =db.collection('Sellers').doc(uidSeller).collection('Producto').doc(NumObjet[j]);
-  
     let res2 = await restarCompraRef2.update({
       cantidad: stock
     });
-    console.log("",stock)
+    console.log("En Seller/Producto:",stock)
+
   }
+  for(var k=0; k<NumObjet.length ; k++){ //agregar uidSeller a la transaccion   
+    let sellerVetaRef = db.collection('Productos').doc(NumObjet[k]);//busco el id del vendedor
+    let doc = await sellerVetaRef.get();
+    let uidSeller = doc.data().uidSeller;
+    objet_Individual2 =ItemsMeta[NumObjet[k]];
+    const estado2 = {idTransacGlobal:idTransacGlobal,uidPedidoSeller:uidSeller};
+    let ItemsMetaState2 = Object.assign(objet_Individual2,estado2)
+    ItemsMeta[NumObjet[k]]=ItemsMetaState2;
+    console.log("id del seller",uidSeller);
+    console.log("datos del producto vendido",ItemsMeta[NumObjet[k]]);
+    await db.collection('Sellers').doc(uidSeller).collection('Ventas').add(ItemsMeta[NumObjet[k]]);//Guarda Todos los pedidos id Auto
+  }
+  for(var k=0; k<NumObjet.length ; k++){ //obtner Correo de cada seller y enviar correo   
+    let sellerVetaRef = db.collection('Productos').doc(NumObjet[k]);//busco el id del vendedor
+    let doc = await sellerVetaRef.get();
+    let uidSeller = doc.data().uidSeller;
+    let cityRef = db.collection('Sellers').doc(uidSeller);
+    let doc1 = await cityRef.get();
+    let emailSeller= doc1.data().email;
+    let DireccionDefaul=  await traerDireccion(UserUidPedido)
+    SendConfirSellers(emailSeller,ItemsMeta[NumObjet[k]],DireccionDefaul,userDate);
+
+ }
 
 
-  //console.log(ItemsMeta[NumObjet[0]])
-  //console.log(ItemsMeta)
-
-  await db.collection('PedidosUsers').doc(UserUidPedido).set(ItemsMeta);
-  await db.collection('Users').doc(UserUidPedido).collection('Pedidos').add(ItemsMeta);
+  //await db.collection('PedidosUsers').doc(UserUidPedido).set(ItemsMeta);//Guarda el ultimo pedido
   await db.collection('CarritoUsers').doc(UserUidPedido).delete();
+  
 }
+
 async function Guardartransaccion(itemsBuy){
   let ItemsMeta=JSON.parse(itemsBuy[0]);
   let UserEmailPedido = ItemsMeta.email;
@@ -100,44 +224,65 @@ app.post('/webhook',async(request,response)=>{
    const tipoRequest=payload.type;
    var userEmail='',userValor='',utcSeconds='',userDate='',itemsBuy='';
   if (tipoRequest === "checkout.session.completed"){
-    console.log('el payload: ',JSON.stringify(payload));
+    //console.log('el payload: ',JSON.stringify(payload));
     userEmail=payload.data.object.customer_details.email;
     userValor=payload.data.object.amount_total;
     utcSeconds=payload.created;
     userDate= new Date(utcSeconds*1000);
     itemsBuy=payload.data.object.metadata;
-    //GuardarPedido(itemsBuy);
+    //GuardarPedido(itemsBuy,userDate);
     //Guardartransaccion(itemsBuy);
+    let ItemsMeta=JSON.parse(itemsBuy[0]);
+    let UserEmailPedido = ItemsMeta.email;
+    let UserUidPedido = ItemsMeta.uid;
+    delete ItemsMeta.email;
+    delete ItemsMeta.uid;
+    let DireccionDefaul=  await traerDireccion(UserUidPedido)
+    
+    
+    
     contentHTML =`
     <h1>Informacion de pago Realizado</h1>
     <ul>
       <li>Usuario: ${userEmail}</li>
       <li>Valor: € ${userValor/100}</li>
       <li>Fecha de pago: ${userDate.toLocaleString()}</li>
+      <br>
+      Envio: 
+      <li>Receptor de envío: ${DireccionDefaul.nombre} ${DireccionDefaul.apellidos} </li>
+      <li>Dirección de envío: ${DireccionDefaul.calle} ${DireccionDefaul.numero} , ${DireccionDefaul.ciudad} ${DireccionDefaul.cpcode} , ${DireccionDefaul.provincia}</li>
+      <li>Indicaciones de envío: ${DireccionDefaul.indicaciones} movil:${DireccionDefaul.telefono}</li>
     </ul>
     `;
     const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+      port:465,//587,
+      segure: true,//par no ssl
+      auth:{
+        user:'vestazproducts@gmail.com',
+        pass:'hzxdstbjhtemkqgk'
+      },
+      /*//.......dev
       host:'smtp.ethereal.email',//servidor smtp
       port:587,
       segure: false,//par no ssl
       auth:{
         user:'jenifer.lowe82@ethereal.email',
         pass:'MRVfC1DCT3mY5N5wTk'
-      },
+      },*/
       tls:{
        // rejectUnauthorized:false
       }
     });
     var mailconten ={
-      from:"'Vesta-Z Server'<suport@vestaz.com>",
+      from:"'Vesta-Z Pedidos'<pedidos@vestaz.es>",
       to: userEmail,
       subject: 'Reporte de pago',
       //text:'hello word',
       html:contentHTML,
     };
     
-    /*const info= await transporter.sendMail(mailconten,(error,info)=>{
-    
+    const info= await transporter.sendMail(mailconten,(error,info)=>{ 
       if (error){
       res.status(500).send(error.message);
     }else{
@@ -146,10 +291,9 @@ app.post('/webhook',async(request,response)=>{
     }
 
     
-  })*/
+  })
 
 //console.log('mensaje enviado', info.messageId)
-
 
   }else{
 
@@ -164,6 +308,7 @@ app.post('/webhook',async(request,response)=>{
   response.json({userEmail})
   response.status(200);  
 })
+
 
 function  toArraycarrito(reqbody){
   let NumObjet = Object.keys(reqbody);
