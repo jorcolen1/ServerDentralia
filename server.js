@@ -197,7 +197,6 @@ app.post('/create-checkout-session', async (req, res) => {
   let UserUid = req.body.uid;
   delete req.body.email;
   delete req.body.uid;
-  delete req.body.address;
   let ArrayTtems= toArraycarrito(req.body);
   //console.log("el contenido del array",itemsBuy)
   //console.log("el contenido del array",ArrayTtems)
