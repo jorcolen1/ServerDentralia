@@ -16,12 +16,14 @@ const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/Subpages';
 app.get('/', (req, res) => {
   res.send("hi!")
 })
+
 app.get('/a',async(req,res)=>{
 
   const querySnapshot = await db.collection('CarritoUsers').get()
   console.log(querySnapshot.docs[0].data())
   res.send("hello <h3>y</h3>")
 })
+ 
 function DirecciondeEnvio(ArrayDirec) {
   let NumObjet = Object.keys(ArrayDirec);
   for(var i=0; i<NumObjet.length ; i++){
@@ -47,8 +49,8 @@ async function traerDireccion(UserUidPedido){
     let DireccionDefaul=DirecciondeEnvio(User.direcciones)
       //console.log("direccion completaaaaaaaaaa")
       return DireccionDefaul;
-
 }
+
 async function SendConfirSellers(emailSeller,Contenido,DireccionDefaul,userDate){
 
   console.log("Correo del vendedor de cada producto",emailSeller )
