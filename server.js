@@ -133,7 +133,7 @@ async function GuardarPedido(itemsBuy,userDate){
   let seg= datePayHum.getSeconds();
   let TimeZone= datePayHum.getTimezoneOffset();
   
-  let datePayGood = Dia+"-"+mes+"-"+anio+" "+hora+":"+minu+":"+seg+"-UTC"+TimeZone;
+  let datePayGood = Dia+"-"+mes+"-"+anio+" "+hora+":"+minu+":"+seg+" -UTC "+TimeZone;
   //console.log(datePayGood,"...>>");
   let NumObjet = Object.keys(ItemsMeta);
 
