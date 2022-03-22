@@ -14,16 +14,10 @@ app.use(express.json());//servidor entiende datos en formato JSON
 
 const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/Subpages';
 app.get('/', (req, res) => {
-  res.send("hi!")
+  res.send("hello world!")
 })
 
-app.get('/a',async(req,res)=>{
-
-  const querySnapshot = await db.collection('CarritoUsers').get()
-  console.log(querySnapshot.docs[0].data())
-  res.send("hello <h3>y</h3>")
-})
- 
+//funcion para detectar direccion por defecto
 function DirecciondeEnvio(ArrayDirec) {
   let NumObjet = Object.keys(ArrayDirec);
   for(var i=0; i<NumObjet.length ; i++){
@@ -37,9 +31,8 @@ function DirecciondeEnvio(ArrayDirec) {
     }
   }
 }
+//Funcion para traer todas las direcciones 
 async function traerDireccion(UserUidPedido){
-  //const DirecValidation = doc(db, "Users", UserUidPedido);
-  //const doc = db.collection('Users').doc(UserUidPedido);
   const cityRef = db.collection('Users').doc(UserUidPedido);
   doc = await cityRef.get()
     //console.log("los datos son",doc.data())
@@ -50,7 +43,7 @@ async function traerDireccion(UserUidPedido){
       //console.log("direccion completaaaaaaaaaa")
       return DireccionDefaul;
 }
-
+// funcion para enviar Email de cada producto a su vendedor
 async function SendConfirSellers(emailSeller,Contenido,DireccionDefaul,userDate){
 
   console.log("Correo del vendedor de cada producto",emailSeller )
@@ -115,6 +108,7 @@ async function SendConfirSellers(emailSeller,Contenido,DireccionDefaul,userDate)
 
 
 }
+// Funcion principal 
 async function GuardarPedido(itemsBuy,userDate){
   let ItemsMeta=JSON.parse(itemsBuy[0]);
   let UserEmailPedido = ItemsMeta.email;
@@ -202,19 +196,7 @@ async function GuardarPedido(itemsBuy,userDate){
   
 }
 
-async function Guardartransaccion(itemsBuy){
-  let ItemsMeta=JSON.parse(itemsBuy[0]);
-  let UserEmailPedido = ItemsMeta.email;
-  let UserUidPedido = ItemsMeta.uid;
-  delete ItemsMeta.email;
-  delete ItemsMeta.uid;
-  let NumObjet = Object.keys(ItemsMeta);
-  //console.log("id de productos-->>",NumObjet)
-  const estado = {estado: "Comprado"};
-  let ItemsMetaState = Object.assign(ItemsMeta,estado)
-  //console.log("modificado--->>>",Object.keys(ItemsMetaState))
-  await db.collection('TransaccionesUserSeller').add(ItemsMetaState);
-}
+
 
 const endpointSecret = 'whsec_432f059542cb8902a743c0e177bb0f1e8acc6e78b30154e05ffc95caeeb35273'
 app.post('/webhook',async(request,response)=>{
@@ -295,18 +277,16 @@ app.post('/webhook',async(request,response)=>{
     
   })
 
-//console.log('mensaje enviado', info.messageId)
-
   }else{
 
   }
   let event;
   try {
-    //event = stripe.webhooks.constructEvent(payload,sig,endpointSecret)
+    event = stripe.webhooks.constructEvent(payload,sig,endpointSecret)
   } catch (err) {
-    //return response.status(400).send(`webhook Error: ${err.message}`)
+    return response.status(400).send(`webhook Error: ${err.message}`)
   }
-  //response.json({payload})
+
   response.json({userEmail})
   response.status(200);  
 })
@@ -335,10 +315,10 @@ function  toArraycarrito(reqbody){
   return ArrayItems
 }
 
+                  /*----Crear el pago en Stripe---- */
 app.post('/create-checkout-session', async (req, res) => {
   //Encender servidor:npm rum dev
   //console.log(req.body);
-
   let itemsBuy = JSON.stringify(req.body);
   let UserEmail = req.body.email;
   let UserUid = req.body.uid;
