@@ -46,9 +46,9 @@ async function traerDireccion(UserUidPedido){
 // funcion para enviar Email de cada producto a su vendedor
 async function SendConfirSellers(emailSeller,Contenido,DireccionDefaul,userDate){
 
-  console.log("Correo del vendedor de cada producto",emailSeller )
-  console.log('Datos de cada producto--->>>',Contenido)
-  console.log('Datos direccion de envio--->>>',DireccionDefaul)
+  //console.log("Correo del vendedor de cada producto",emailSeller )
+  //console.log('Datos de cada producto--->>>',Contenido)
+  //console.log('Datos direccion de envio--->>>',DireccionDefaul)
   let total = Contenido.precio*Contenido.cantidad;
   contentHTML =`
   <h1>Informacion de pago Realizado</h1>
@@ -121,9 +121,20 @@ async function GuardarPedido(itemsBuy,userDate){
   let tiempoTranscurrido= Date.now();
   //let datePayUnixUTC = datePay.getTime();
   let datePayHum = new Date(tiempoTranscurrido)
-  datePayGood= datePayHum.toLocaleDateString()+" "+datePayHum.toLocaleTimeString();
+  //datePayGood= datePayHum.toLocaleDateString()+" "+datePayHum.toLocaleTimeString();
+  let datePayGood2= datePayHum.toJSON();
 
-  console.log(datePayGood);
+  let Dia= datePayHum.getDate();
+  let mes= (datePayHum.getMonth()+1);
+  let anio= datePayHum.getFullYear();
+
+  let hora= datePayHum.getHours();
+  let minu= datePayHum.getMinutes();
+  let seg= datePayHum.getSeconds();
+  let TimeZone= datePayHum.getTimezoneOffset();
+  
+  let datePayGood = Dia+"-"+mes+"-"+anio+" "+hora+":"+minu+":"+seg+"-UTC"+TimeZone;
+  //console.log(datePayGood,"...>>");
   let NumObjet = Object.keys(ItemsMeta);
 
   //console.log("los Datos del pedido",ItemsMeta)
@@ -141,12 +152,12 @@ async function GuardarPedido(itemsBuy,userDate){
     };
     let ItemsMetaState = Object.assign(objet_Individual,estado)
     ItemsMeta[NumObjet[i]]=ItemsMetaState;
-    console.log("objeto-->>>",i,ItemsMetaState)
+    //console.log("objeto-->>>",i,ItemsMetaState)
   }
 
   let irespTransacGlobal = await db.collection('Users').doc(UserUidPedido).collection('Pedidos').add(ItemsMeta);//Guarda Todos los pedidos id Auto
   let idTransacGlobal=irespTransacGlobal.id;
-  console.log("idTransacGlobal:",idTransacGlobal)
+  //console.log("idTransacGlobal:",idTransacGlobal)
 
   for(var j=0; j<NumObjet.length ; j++){ //agregar la funcion de resta de la compra 
     let restarCompraRef = db.collection('Productos').doc(NumObjet[j]);
@@ -174,8 +185,8 @@ async function GuardarPedido(itemsBuy,userDate){
     const estado2 = {idTransacGlobal:idTransacGlobal,uidPedidoSeller:uidSeller};
     let ItemsMetaState2 = Object.assign(objet_Individual2,estado2)
     ItemsMeta[NumObjet[k]]=ItemsMetaState2;
-    console.log("id del seller",uidSeller);
-    console.log("datos del producto vendido",ItemsMeta[NumObjet[k]]);
+    //console.log("id del seller",uidSeller);
+    //console.log("datos del producto vendido",ItemsMeta[NumObjet[k]]);
     await db.collection('Sellers').doc(uidSeller).collection('Ventas').add(ItemsMeta[NumObjet[k]]);//Guarda Todos los pedidos id Auto
   }
   for(var k=0; k<NumObjet.length ; k++){ //obtner Correo de cada seller y enviar correo   
@@ -268,10 +279,10 @@ app.post('/webhook',async(request,response)=>{
     
     const info= await transporter.sendMail(mailconten,(error,info)=>{ 
       if (error){
-      res.status(500).send(error.message);
+      //res.status(500).send(error.message);
     }else{
       console.log('mail enviado.');
-      res.status(200).jsonp(tipoRequest)
+      //res.status(200).jsonp(tipoRequest)
     }
 
     
