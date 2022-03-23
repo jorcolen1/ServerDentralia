@@ -279,10 +279,10 @@ app.post('/webhook',async(request,response)=>{
     
     const info= await transporter.sendMail(mailconten,(error,info)=>{ 
       if (error){
-      //res.status(500).send(error.message);
+      res.status(500).send(error.message);
     }else{
       console.log('mail enviado.');
-      //res.status(200).jsonp(tipoRequest)
+      res.status(200).jsonp(tipoRequest)
     }
 
     
@@ -293,9 +293,9 @@ app.post('/webhook',async(request,response)=>{
   }
   let event;
   try {
-    event = stripe.webhooks.constructEvent(payload,sig,endpointSecret)
+    //event = stripe.webhooks.constructEvent(payload,sig,endpointSecret)
   } catch (err) {
-    return response.status(400).send(`webhook Error: ${err.message}`)
+    //return response.status(400).send(`webhook Error: ${err.message}`)
   }
 
   response.json({userEmail})
