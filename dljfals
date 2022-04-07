@@ -1,0 +1,13 @@
+user.email=you@example.com
+core.repositoryformatversion=0
+core.filemode=true
+core.bare=false
+core.logallrefupdates=true
+core.symlinks=false
+core.ignorecase=true
+remote.heroku.url=https://git.heroku.com/vestatesting.git
+remote.heroku.fetch=+refs/heads/*:refs/remotes/heroku/*
+taggrouping.groups=
+taggrouping.singles=
+user.name=jorcolen1
+user.email=jorcolen@gmail.com
