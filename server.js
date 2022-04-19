@@ -284,7 +284,6 @@ app.post('/webhook',async(request,response)=>{
       console.log('mail enviado.');
       res.status(200).jsonp(tipoRequest)
     }
-
     
   })
 
