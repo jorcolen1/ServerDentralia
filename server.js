@@ -2,9 +2,12 @@
 const stripe = require('stripe')('sk_test_51KDsabCEfvUCezSL48udO57i0YcetQIW8fhmJDv7CmFccF1B0ZfOjgqUmJQHh8KKU1KANxzKa4MMFQiNxhZO8MWg00pJMhTfjX');
 const express = require('express');
 const cors = require('cors')
+const hbs = require('nodemailer-express-handlebars')
 const nodemailer =require('nodemailer');
 const res = require('express/lib/response');
 const {db}=require('./firebase')
+const path = require('path')
+
 //comment
 const app = express();
 app.use(express.static('public'));
@@ -16,10 +19,109 @@ const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/Subpages';
 app.get('/', (req, res) => {
   res.send("hello world!!!!!")
 })
-
-app.post('/v1/notifi-welcome',(req,res)=>{
+// endpoint de bienvenida
+app.post('/email/v1/welcome',(req,res)=>{
   console.log(req.body);
+  const data = req.body;
+  console.log("todo el tiempo ",data.email)
+  // initialize nodemailer
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+  port:465,//587,
+  segure: true,//par no ssl
+  auth:{
+    user:'vestazproducts@gmail.com',
+    pass:'hzxdstbjhtemkqgk'
+  },
+});
+
+// point to the template folder
+const handlebarOptions = {
+  viewEngine: {
+      partialsDir: path.resolve('./views/'),
+      defaultLayout: false,
+  },
+  viewPath: path.resolve('./views/'),
+};
+
+// use a template file with nodemailer
+transporter.use('compile', hbs(handlebarOptions))
+
+
+var mailOptions = {
+  from:"'Vesta-Z Pedidos'<pedidos@vestaz.es>", // sender address
+  to:data.email,//req.body.email , // list of receivers
+  subject: 'Welcome!',
+  template: 'email', // the name of the template file i.e email.handlebars
+  context:{
+      name: data.name, // replace {{name}} with Adebola
+      company: 'es la compania' // replace {{company}} with My Company
+  }
+};
+
+
+// trigger the sending of the E-mail
+transporter.sendMail(mailOptions, function(error, info){
+  if(error){
+      return console.log(error);
+  }
+  console.log('Message sent: ' + info.response);
+});
+
+
+  res.send("welcome to vestaZ")
+})
+
+// endpoint de bienvenida
+app.post('/email/v1/sending',(req,res)=>{
+  console.log(req.body);
+  const data = req.body;
   
+  // initialize nodemailer
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+  port:465,//587,
+  segure: true,//par no ssl
+  auth:{
+    user:'vestazproducts@gmail.com',
+    pass:'hzxdstbjhtemkqgk'
+  },
+});
+
+// point to the template folder
+const handlebarOptions = {
+  viewEngine: {
+      partialsDir: path.resolve('./views/'),
+      defaultLayout: false,
+  },
+  viewPath: path.resolve('./views/'),
+};
+
+// use a template file with nodemailer
+transporter.use('compile', hbs(handlebarOptions))
+
+
+var mailOptions = {
+  from:"'Vesta-Z Pedidos'<pedidos@vestaz.es>", // sender address
+  to:data.email,//req.body.email , // list of receivers
+  subject: 'Welcome!',
+  template: 'sending', // the name of the template file i.e email.handlebars
+  context:{
+      name: data.name, // replace {{name}} with Adebola
+      company: 'es la compania' // replace {{company}} with My Company
+  }
+};
+
+
+// trigger the sending of the E-mail
+transporter.sendMail(mailOptions, function(error, info){
+  if(error){
+      return console.log(error);
+  }
+  console.log('Message sent: ' + info.response);
+});
+
+
   res.send("welcome to vestaZ")
 })
 
@@ -212,6 +314,8 @@ async function GuardarPedido(itemsBuy,userDate){
   await db.collection('CarritoUsers').doc(UserUidPedido).delete();
   
 }
+
+
 
 
 
