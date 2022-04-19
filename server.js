@@ -14,7 +14,13 @@ app.use(express.json());//servidor entiende datos en formato JSON
 
 const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/Subpages';
 app.get('/', (req, res) => {
-  res.send("hello world!")
+  res.send("hello world!!!!!")
+})
+
+app.post('/v1/notifi-welcome',(req,res)=>{
+  console.log(req.body);
+  
+  res.send("welcome to vestaZ")
 })
 
 //funcion para detectar direccion por defecto
@@ -351,6 +357,7 @@ app.post('/create-checkout-session', async (req, res) => {
   //res.redirect(303, session.url);
   res.json({id:session.id})
 });
+
 const PORT = process.env.PORT || 4242
 const server = app.listen(PORT, () => console.log(`Running on port ${PORT}`));
  
