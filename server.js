@@ -56,7 +56,7 @@ var mailOptions = {
   //attachments: [{ filename: "Vesta Z - Logo -dark-sin services.png", path: "./public/img/Vesta Z - Logo -dark-sin services.png" }],
   context:{
       name: data.name, // replace {{name}} 
-      email: data.email, // replace {{company}}
+      email: data.email, // replace {{email}}
       uidUser:data.uidUser  
   }
 };
