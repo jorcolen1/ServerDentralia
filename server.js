@@ -61,7 +61,6 @@ var mailOptions = {
   }
 };
 
-
 // trigger the sending of the E-mail
 transporter.sendMail(mailOptions, function(error, info){
   if(error){
@@ -71,7 +70,8 @@ transporter.sendMail(mailOptions, function(error, info){
 });
 
 
-  res.send("welcome to vestaZ")
+  res.json({Bien:"correo enviado"})
+  //res.send("welcome to vestaZ")
 })
 
 // endpoint de producto Enviado
