@@ -23,7 +23,6 @@ app.get('/', (req, res) => {
 app.post('/email/v1/welcome',(req,res)=>{
   console.log(req.body);
   const data = req.body;
-  console.log("todo el tiempo ",data.email)
   // initialize nodemailer
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
@@ -53,9 +52,12 @@ var mailOptions = {
   to:data.email,//req.body.email , // list of receivers
   subject: 'Welcome!',
   template: 'email', // the name of the template file i.e email.handlebars
+  bcc: 'vestazproducts@gmail.com',
+  //attachments: [{ filename: "Vesta Z - Logo -dark-sin services.png", path: "./public/img/Vesta Z - Logo -dark-sin services.png" }],
   context:{
-      name: data.name, // replace {{name}} with Adebola
-      company: 'es la compania' // replace {{company}} with My Company
+      name: data.name, // replace {{name}} 
+      email: data.email, // replace {{company}}
+      uidUser:data.uidUser  
   }
 };
 
@@ -72,7 +74,7 @@ transporter.sendMail(mailOptions, function(error, info){
   res.send("welcome to vestaZ")
 })
 
-// endpoint de bienvenida
+// endpoint de producto Enviado
 app.post('/email/v1/sending',(req,res)=>{
   console.log(req.body);
   const data = req.body;
