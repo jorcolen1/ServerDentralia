@@ -78,7 +78,10 @@ transporter.sendMail(mailOptions, function(error, info){
 app.post('/email/v1/sending',(req,res)=>{
   console.log(req.body);
   const data = req.body;
-  
+  let tiempoTranscurrido= Date.now();
+  var date = new Date(tiempoTranscurrido)
+  console.log("es la fecha de compra-->>",date)
+
   // initialize nodemailer
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
@@ -102,16 +105,17 @@ const handlebarOptions = {
 // use a template file with nodemailer
 transporter.use('compile', hbs(handlebarOptions))
 
-
 var mailOptions = {
   from:"'Vesta-Z Pedidos'<pedidos@vestaz.es>", // sender address
   to:data.email,//req.body.email , // list of receivers
-  subject: 'Welcome!',
+  subject: 'Producto Enviado',
   template: 'sending', // the name of the template file i.e email.handlebars
   context:{
-      name: data.name, // replace {{name}} with Adebola
-      company: 'es la compania' // replace {{company}} with My Company
-  }
+    name: data.name, // replace {{name}} 
+    email: data.email, // replace {{email}} 
+    idPedido:data.idPedido,
+    DateSending:date  
+}
 };
 
 
@@ -122,9 +126,7 @@ transporter.sendMail(mailOptions, function(error, info){
   }
   console.log('Message sent: ' + info.response);
 });
-
-
-  res.send("welcome to vestaZ")
+  res.send("Sending product from vestaZ")
 })
 
 //funcion para detectar direccion por defecto
@@ -141,6 +143,7 @@ function DirecciondeEnvio(ArrayDirec) {
     }
   }
 }
+
 //Funcion para traer todas las direcciones 
 async function traerDireccion(UserUidPedido){
   const cityRef = db.collection('Users').doc(UserUidPedido);
@@ -153,6 +156,7 @@ async function traerDireccion(UserUidPedido){
       //console.log("direccion completaaaaaaaaaa")
       return DireccionDefaul;
 }
+
 // funcion para enviar Email de cada producto a su vendedor
 async function SendConfirSellers(emailSeller,Contenido,DireccionDefaul,userDate){
 
@@ -218,6 +222,7 @@ async function SendConfirSellers(emailSeller,Contenido,DireccionDefaul,userDate)
 
 
 }
+
 // Funcion principal 
 async function GuardarPedido(itemsBuy,userDate){
   let ItemsMeta=JSON.parse(itemsBuy[0]);
