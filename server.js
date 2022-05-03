@@ -182,21 +182,21 @@ async function SendConfirSellers(emailSeller,Contenido,DireccionDefaul,userDate)
   </ul>
   `;
    const transporter = nodemailer.createTransport({
-    /*host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+    host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
     port:465,//587,
     segure: true,//par no ssl
     auth:{
       user:'vestazproducts@gmail.com',
       pass:'hzxdstbjhtemkqgk'
-    },*/
+    },
     //.......dev
-    host:'smtp.ethereal.email',//servidor smtp
+    /*host:'smtp.ethereal.email',//servidor smtp
     port:587,
     segure: false,//par no ssl
     auth:{
       user:'jenifer.lowe82@ethereal.email',
       pass:'MRVfC1DCT3mY5N5wTk'
-    },
+    },*/
     tls:{
      // rejectUnauthorized:false
     }
