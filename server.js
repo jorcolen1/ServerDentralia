@@ -6,7 +6,8 @@ const hbs = require('nodemailer-express-handlebars')
 const nodemailer =require('nodemailer');
 const res = require('express/lib/response');
 const {db}=require('./firebase')
-const path = require('path')
+const path = require('path');
+const { stringify } = require('querystring');
 
 //comment
 const app = express();
@@ -24,50 +25,49 @@ app.post('/email/v1/welcome',(req,res)=>{
   console.log(req.body);
   const data = req.body;
   // initialize nodemailer
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
-  port:465,//587,
-  segure: true,//par no ssl
-  auth:{
-    user:'vestazproducts@gmail.com',
-    pass:'hzxdstbjhtemkqgk'
-  },
-});
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+    port:465,//587,
+    segure: true,//par no ssl
+    auth:{
+      user:'vestazproducts@gmail.com',
+      pass:'hzxdstbjhtemkqgk'
+    },
+  });
 
-// point to the template folder
-const handlebarOptions = {
-  viewEngine: {
-      partialsDir: path.resolve('./views/'),
-      defaultLayout: false,
-  },
-  viewPath: path.resolve('./views/'),
-};
+  // point to the template folder
+  const handlebarOptions = {
+    viewEngine: {
+        partialsDir: path.resolve('./views/'),
+        defaultLayout: false,
+    },
+    viewPath: path.resolve('./views/'),
+  };
 
-// use a template file with nodemailer
-transporter.use('compile', hbs(handlebarOptions))
+  // use a template file with nodemailer
+  transporter.use('compile', hbs(handlebarOptions))
 
+  var mailOptions = {
+    from:"'Vesta-Z Pedidos'<pedidos@vestaz.es>", // sender address
+    to:data.email,//req.body.email , // list of receivers
+    subject: 'Welcome!',
+    template: 'email', // the name of the template file i.e email.handlebars
+    bcc: 'vestazproducts@gmail.com',
+    //attachments: [{ filename: "Vesta Z - Logo -dark-sin services.png", path: "./public/img/Vesta Z - Logo -dark-sin services.png" }],
+    context:{
+        name: data.name, // replace {{name}} 
+        email: data.email, // replace {{email}}
+        uidUser:data.uidUser  
+    }
+  };
 
-var mailOptions = {
-  from:"'Vesta-Z Pedidos'<pedidos@vestaz.es>", // sender address
-  to:data.email,//req.body.email , // list of receivers
-  subject: 'Welcome!',
-  template: 'email', // the name of the template file i.e email.handlebars
-  bcc: 'vestazproducts@gmail.com',
-  //attachments: [{ filename: "Vesta Z - Logo -dark-sin services.png", path: "./public/img/Vesta Z - Logo -dark-sin services.png" }],
-  context:{
-      name: data.name, // replace {{name}} 
-      email: data.email, // replace {{email}}
-      uidUser:data.uidUser  
-  }
-};
-
-// trigger the sending of the E-mail
-transporter.sendMail(mailOptions, function(error, info){
-  if(error){
-      return console.log(error);
-  }
-  console.log('Message sent: ' + info.response);
-});
+  // trigger the sending of the E-mail
+  transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+        return console.log(error);
+    }
+    console.log('Message sent: ' + info.response);
+  });
 
 
   res.json({Bien:"correo enviado"})
@@ -80,53 +80,53 @@ app.post('/email/v1/sending',(req,res)=>{
   const data = req.body;
   let tiempoTranscurrido= Date.now();
   var date = new Date(tiempoTranscurrido)
-  console.log("es la fecha de compra-->>",date)
-
+  console.log("es la fecha de compra-->>",)
+  let DireccionDefaul = data.DireccionDefaul;
   // initialize nodemailer
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
-  port:465,//587,
-  segure: true,//par no ssl
-  auth:{
-    user:'vestazproducts@gmail.com',
-    pass:'hzxdstbjhtemkqgk'
-  },
-});
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+    port:465,//587,
+    segure: true,//par no ssl
+    auth:{
+      user:'vestazproducts@gmail.com',
+      pass:'hzxdstbjhtemkqgk'
+    },
+  });
 
-// point to the template folder
-const handlebarOptions = {
-  viewEngine: {
-      partialsDir: path.resolve('./views/'),
-      defaultLayout: false,
-  },
-  viewPath: path.resolve('./views/'),
-};
+  // point to the template folder
+  const handlebarOptions = {
+    viewEngine: {
+        partialsDir: path.resolve('./views/'),
+        defaultLayout: false,
+    },
+    viewPath: path.resolve('./views/'),
+  };
 
-// use a template file with nodemailer
-transporter.use('compile', hbs(handlebarOptions))
+  // use a template file with nodemailer
+  transporter.use('compile', hbs(handlebarOptions))
 
-var mailOptions = {
-  from:"'Vesta-Z Pedidos'<pedidos@vestaz.es>", // sender address
-  to:data.email,//req.body.email , // list of receivers
-  subject: 'Producto Enviado',
-  template: 'sending', // the name of the template file i.e email.handlebars
-  context:{
-    name: data.name, // replace {{name}} 
-    email: data.email, // replace {{email}} 
-    idPedido:data.idPedido,
-    DateSending:date  
-}
-};
+  var mailOptions = {
+    from:"'Vesta-Z PedidosEnvio'<pedidos@vestaz.es>", // sender address
+    to:data.email,//req.body.email , // list of receivers
+    subject: 'Producto Enviado',
+    template: 'sending', // the name of the template file i.e email.handlebars
+    context:{
+      name: data.name, // replace {{name}} 
+      email: data.email, // replace {{email}} 
+      idPedido:data.idPedido,
+      direccionDefaul:( DireccionDefaul.calle+" "+DireccionDefaul.numero+","+DireccionDefaul.ciudad+" "+DireccionDefaul.cpcode+","+DireccionDefaul.provincia),     
+      DateSending:date  
+    }
+  };
 
-
-// trigger the sending of the E-mail
-transporter.sendMail(mailOptions, function(error, info){
-  if(error){
-      return console.log(error);
-  }
-  console.log('Message sent: ' + info.response);
-});
-  res.send("Sending product from vestaZ")
+  // trigger the sending of the E-mail
+  transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+        return console.log(error);
+    }
+    console.log('Message sent: ' + info.response);
+  });
+    res.send("sendingggg correcto")
 })
 
 //funcion para detectar direccion por defecto
