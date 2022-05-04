@@ -129,6 +129,58 @@ app.post('/email/v1/sending',(req,res)=>{
     res.send("sendingggg correcto")
 })
 
+// endpoint de Notificacion Cambio de Password 
+app.post('/email/v1/passwordntf',(req,res)=>{
+  console.log(req.body);
+
+  const data = (req.body);
+  console.log("datos parse",data)
+  let tiempoTranscurrido= Date.now();
+  var date = new Date(tiempoTranscurrido)
+  // initialize nodemailer
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+    port:465,//587,
+    segure: true,//par no ssl
+    auth:{
+      user:'vestazproducts@gmail.com',
+      pass:'hzxdstbjhtemkqgk'
+    },
+  });
+
+  // point to the template folder
+  const handlebarOptions = {
+    viewEngine: {
+        partialsDir: path.resolve('./views/'),
+        defaultLayout: false,
+    },
+    viewPath: path.resolve('./views/'),
+  };
+
+  // use a template file with nodemailer
+  transporter.use('compile', hbs(handlebarOptions))
+
+  var mailOptions = {
+    from:"'Vesta-Z Admin'<pedidos@vestaz.es>", // sender address
+    to:data.email,//req.body.email , // list of receivers
+    subject: 'Cambio de Contraseña',
+    template: 'passwordntf', // the name of the template file i.e email.handlebars
+    context:{
+      lugar:data.lugar,
+      DateSending:date  
+    }
+  };
+
+  // trigger the sending of the E-mail
+  transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+        return console.log(error);
+    }
+    console.log('Message sent: ' + info.response);
+  });
+    res.send("se cambio la contraseña")
+})
+
 //funcion para detectar direccion por defecto
 function DirecciondeEnvio(ArrayDirec) {
   let NumObjet = Object.keys(ArrayDirec);
