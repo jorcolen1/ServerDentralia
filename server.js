@@ -12,13 +12,27 @@ const { stringify } = require('querystring');
 //comment
 const app = express();
 app.use(express.static('public'));
-app.use(cors());
 //app.use(express.urlencoded({extended: false}));
 app.use(express.json());//servidor entiende datos en formato JSON
 
 const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/Subpages';
-app.get('/', (req, res) => {
-  res.send("hello world!!!!!")
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin
+  if (origin == undefined || origin !== YOUR_DOMAIN) { 
+    
+    res.status(403).json({
+      error: "Not allowed"
+    })
+  } else {
+    next()  
+  }
+})
+
+app.get('/', (req, res, next) => {
+  const origin = req.headers.origin
+  console.log(origin)
+  
 })
 // endpoint de bienvenida
 app.post('/email/v1/welcome',(req,res)=>{
@@ -126,7 +140,8 @@ app.post('/email/v1/sending',(req,res)=>{
     }
     console.log('Message sent: ' + info.response);
   });
-    res.send("sendingggg correcto")
+  const okMsg = JSON.stringify('Message sent properly')
+    res.status(200).send(okMsg)
 })
 
 // endpoint de Notificacion Cambio de Password 
@@ -178,7 +193,8 @@ app.post('/email/v1/passwordntf',(req,res)=>{
     }
     console.log('Message sent: ' + info.response);
   });
-    res.send("se cambio la contraseña")
+  const okMsg = JSON.stringify('se cambio la contraseña')
+    res.status(200).send(okMsg)
 })
 
 //funcion para detectar direccion por defecto
@@ -523,5 +539,3 @@ app.post('/create-checkout-session', async (req, res) => {
 
 const PORT = process.env.PORT || 4242
 const server = app.listen(PORT, () => console.log(`Running on port ${PORT}`));
- 
-
