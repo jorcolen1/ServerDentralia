@@ -6,16 +6,48 @@
   <title>Sending Email</title>
 </head>
 <body>
-  <div>
+  <style>
+    .logoContainer {
+      background-color: #000;
+    }
+    .logoContainer > img {
+      max-width: 150px;
+    }
+    .alertNotification {
+      display: flex;
+      color: #FF6700;
+      fill: #FF6700;
+    }
+    .svgContainer {
+      width: 50px;
+    }
+
+    .deliveryImg {
+      width: 150px;
+    }
+  </style>
+  <div class="logoContainer">
       <img  class="logoIcon " src="https://testingserver-vesta.herokuapp.com/Img/Logo_Mesa%20Vesta.png" >
   </div>
-  <h2>Hello {{name}}! </h2>
-   <p>Sendingggggg..... ¡Tenemos buenas noticias para usted! Su pedido n.º 59602202, realizado el 04.01.2022 11:33:35, acaba de ser embalado en nuestro almacén y está listo para ser enviado a: Silla </p>
+  <div class="deliveryImg">
+    <img src="https://firebasestorage.googleapis.com/v0/b/vestaz.appspot.com/o/deliver.png?alt=media&token=32e10616-0aae-4bfc-8755-d861ce464eb7" alt="deliver">
+  </div>
+  <h2>Hola {{name}},</h2>
+  <p>¡Tenemos buenas noticias para usted! Su pedido con identificador: {{idPedido}}, realizado el {{DateSending}}, acaba de ser embalado en nuestro almacén y está listo para ser enviado a: {{direccionDefaul}} </p>
   <p>Id del pedido:{{idPedido}}. </p>
   <p>Correo Electronico: {{email}}. </p>
   <p>Direccion de envio:{{direccionDefaul}}. </p>
   <p>Fecha de Envio:{{DateSending}}. </p>
-  
-
+  <br>
+  <article class="alertNotification">
+    <div class="svgContainer">
+      <svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512"><title>Alert Circle</title><path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192 192-86 192-192z" fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="32"/><path d="M250.26 166.05L256 288l5.73-121.95a5.74 5.74 0 00-5.79-6h0a5.74 5.74 0 00-5.68 6z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path d="M256 367.91a20 20 0 1120-20 20 20 0 01-20 20z"/></svg>
+    </div>
+    <p>Por favor, tenga en cuenta que pueden pasar hasta 24 horas antes de que su número de seguimiento se encuentre disponible online.</p>
+  </article>
+ <footer>
+   <small>Nota: es fundamental inspeccionar la mercancía en el momento de su recepción para comprobar que no haya sufrido daños durante el transporte. Los daños evidentes (daños visibles en el exterior) deben ser comunicados de inmediato al mensajero de la empresa de mensajería. En este caso, usted puede rechazar la aceptación del paquete. Los daños ocultos que se descubran después de haber aceptado el paquete deben ser comunicados de inmediato a nuestro equipo de atención al cliente.</small><br/><br/>
+  <small>Una vez que la mercancía haya sido revisada por el agente de transporte y devuelta a nosotros, procederemos de inmediato a enviarle una sustitución o a reembolsarle el precio de compra.</small>
+ </footer>
 </body>
 </html>
