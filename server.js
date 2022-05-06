@@ -19,12 +19,6 @@ app.use(express.json());//servidor entiende datos en formato JSON
 
 const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/Subpages';
 
-<<<<<<< HEAD
-
-app.get('/', (req, res) => {
-  //res.send("hello world!!!!!")
-  res.json({msg: 'This is CORS-enabled for a Single Route'})
-=======
 app.use((req, res, next) => {
   const origin = req.headers.origin
   if (origin == undefined || origin !== YOUR_DOMAIN) { 
@@ -41,7 +35,6 @@ app.get('/', (req, res, next) => {
   const origin = req.headers.origin
   console.log(origin)
   
->>>>>>> 8e15780f9189c510bdf3ebdc04d4b34788331b70
 })
 // endpoint de bienvenida
 app.post('/email/v1/welcome',(req,res)=>{
