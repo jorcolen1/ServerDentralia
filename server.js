@@ -12,13 +12,20 @@ const { stringify } = require('querystring');
 //comment
 const app = express();
 app.use(express.static('public'));
-app.use(cors());
 //app.use(express.urlencoded({extended: false}));
 app.use(express.json());//servidor entiende datos en formato JSON
 
 const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/Subpages';
-app.get('/', (req, res) => {
-  res.send("hello world!!!!!")
+var corsOptions = {
+  origin: YOUR_DOMAIN, //'http://192.168.1.98:4242/',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
+
+app.use(cors(corsOptions));
+
+app.get('/',cors(corsOptions), (req, res) => {
+  //res.send("hello world!!!!!")
+  res.json({msg: 'This is CORS-enabled for a Single Route'})
 })
 // endpoint de bienvenida
 app.post('/email/v1/welcome',(req,res)=>{
