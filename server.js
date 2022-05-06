@@ -8,6 +8,8 @@ const res = require('express/lib/response');
 const {db}=require('./firebase')
 const path = require('path');
 const { stringify } = require('querystring');
+const fs = require('fs');
+const https = require('https');
 
 //comment
 const app = express();
@@ -16,14 +18,9 @@ app.use(express.static('public'));
 app.use(express.json());//servidor entiende datos en formato JSON
 
 const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/Subpages';
-var corsOptions = {
-  origin: YOUR_DOMAIN, //'http://192.168.1.98:4242/',
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-}
 
-app.use(cors(corsOptions));
 
-app.get('/',cors(corsOptions), (req, res) => {
+app.get('/', (req, res) => {
   //res.send("hello world!!!!!")
   res.json({msg: 'This is CORS-enabled for a Single Route'})
 })
@@ -529,6 +526,11 @@ app.post('/create-checkout-session', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4242
+
+/*https.createServer({
+  cert:fs.readFileSync('mi_certificado.crt'),
+  key:fs.readFileSync('mi_certificado.key')
+  },app).listen(PORT, () => console.log(`Running on port ${PORT}`));*/
 const server = app.listen(PORT, () => console.log(`Running on port ${PORT}`));
  
 
