@@ -8,19 +8,74 @@ const res = require('express/lib/response');
 const {db}=require('./firebase')
 const path = require('path');
 const { stringify } = require('querystring');
+const jwt = require('jsonwebtoken')
 const fs = require('fs');
 const https = require('https');
 
 //comment
 const app = express();
 app.use(express.static('public'));
-//app.use(express.urlencoded({extended: false}));
 app.use(express.json());//servidor entiende datos en formato JSON
 
 const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/Subpages';
+//const YOUR_DOMAIN = 'http://192.168.1.98/';
+
+
+//////0----------------------------------------------------------
+
+app.get('/hi',(req,res) => {
+  res.json({
+    text:'api works!!!!'
+  });
+});
+
+app.post('/api/login',(req,res)=>{
+  const dateOffToken=Date.now();
+  const user = {
+          id: 4,
+          Name: 'andres',
+          dateOffToken: dateOffToken
+            };
+  const token = jwt.sign({user}, 'my_secret_key');//(ponerla como variavle de entorno)
+  res.json({
+    token
+  });
+});
+
+app.get('/api/protected',ensureToken,(req,res)=>{
+  jwt.verify(req.token, 'my_secret_key',(err,data) => {
+    if(err){
+      res.sendStatus(403)
+    }
+    else{
+      res.json({
+        text: 'protegido',
+        data: data
+     })
+    }
+  })
+})
+
+function ensureToken(req, res, next){
+  console.log("la cabecera",req.headers)
+  const bearerHeaders = req.headers['authorization'];
+  console.log('bearerHeaders>>>',bearerHeaders);
+  if(typeof bearerHeaders !== 'undefined'){
+    const bearer = bearerHeaders.split(" ");
+    const bearertoken= bearer[1];
+    req.token= bearertoken;
+    next()
+  }else{
+    res.sendStatus(403)// no permitido
+  }
+}
+
+
+//////0----------------------------------------------------------
 
 app.use((req, res, next) => {
   const origin = req.headers.origin
+  console.log("eesss__>>>>>>>>",req.headers)
   if (origin == undefined || origin !== YOUR_DOMAIN) { 
     
     res.status(403).json({
@@ -29,13 +84,16 @@ app.use((req, res, next) => {
   } else {
     next()  
   }
-})
+});
 
 app.get('/', (req, res, next) => {
   const origin = req.headers.origin
-  console.log(origin)
+  console.log('dominio correcto ',origin)
+  res.status(200).json({
+    error: "ok vale esta bien"
+  }) 
   
-})
+});
 // endpoint de bienvenida
 app.post('/email/v1/welcome',(req,res)=>{
   console.log(req.body);
@@ -392,10 +450,6 @@ async function GuardarPedido(itemsBuy,userDate){
   
 }
 
-
-
-
-
 const endpointSecret = 'whsec_432f059542cb8902a743c0e177bb0f1e8acc6e78b30154e05ffc95caeeb35273'
 app.post('/webhook',async(request,response)=>{
   // encender tunel: stripe listen --forward-to localhost:4242/webhook
@@ -487,7 +541,6 @@ app.post('/webhook',async(request,response)=>{
   response.json({userEmail})
   response.status(200);  
 })
-
 
 function  toArraycarrito(reqbody){
   let NumObjet = Object.keys(reqbody);
