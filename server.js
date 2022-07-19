@@ -73,7 +73,7 @@ function ensureToken(req, res, next){
 
 //////0----------------------------------------------------------
 
-app.use((req, res, next) => {
+/* app.use((req, res, next) => {
   const origin = req.headers.origin
   console.log("eesss__>>>>>>>>",req.headers)
   if (origin == undefined || origin !== YOUR_DOMAIN) { 
@@ -92,8 +92,8 @@ app.get('/', (req, res, next) => {
   res.status(200).json({
     error: "ok vale esta bien"
   }) 
-  
-});
+}); */
+
 // endpoint de bienvenida
 app.post('/email/v1/welcome',(req,res)=>{
   console.log(req.body);
@@ -148,7 +148,62 @@ app.post('/email/v1/welcome',(req,res)=>{
   //res.send("welcome to vestaZ")
 })
 
-// endpoint de producto Enviado
+// endpoint de producto se esta tramitando
+app.post('/email/v1/processing',(req,res)=>{
+  console.log(req.body);
+  const data = req.body;
+  let tiempoTranscurrido= Date.now();
+  var date = new Date(tiempoTranscurrido)
+  console.log("es la fecha de compra-->>",)
+  let DireccionDefaul = data.DireccionDefaul;
+  // initialize nodemailer
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+    port:465,//587,
+    segure: true,//par no ssl
+    auth:{
+      user:'vestazproducts@gmail.com',
+      pass:'hzxdstbjhtemkqgk'
+    },
+  });
+
+  // point to the template folder
+  const handlebarOptions = {
+    viewEngine: {
+        partialsDir: path.resolve('./views/'),
+        defaultLayout: false,
+    },
+    viewPath: path.resolve('./views/'),
+  };
+
+  // use a template file with nodemailer
+  transporter.use('compile', hbs(handlebarOptions))
+
+  var mailOptions = {
+    from:"'Vesta-Z Procesos'<pedidos@vestaz.es>", // sender address
+    to:data.email,//req.body.email , // list of receivers
+    subject: 'Procesando Pedido',
+    template: 'processing', // the name of the template file i.e email.handlebars
+    context:{
+      name: data.name, // replace {{name}} 
+      email: data.email, // replace {{email}} 
+      idPedido:data.idPedido,
+      direccionDefaul:( DireccionDefaul.calle+" "+DireccionDefaul.numero+","+DireccionDefaul.ciudad+" "+DireccionDefaul.cpcode+","+DireccionDefaul.provincia),     
+      DateSending:date  
+    }
+  };
+
+  // trigger the processing of the E-mail
+  transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+        return console.log(error);
+    }
+    console.log('Message sent: ' + info.response);
+  });
+  const okMsg = JSON.stringify('Message sent properly')
+    res.status(200).send(okMsg)
+})
+// endpoint de producto Enviado--ok
 app.post('/email/v1/sending',(req,res)=>{
   console.log(req.body);
   const data = req.body;
@@ -184,6 +239,116 @@ app.post('/email/v1/sending',(req,res)=>{
     to:data.email,//req.body.email , // list of receivers
     subject: 'Producto Enviado',
     template: 'sending', // the name of the template file i.e email.handlebars
+    context:{
+      name: data.name, // replace {{name}} 
+      email: data.email, // replace {{email}} 
+      idPedido:data.idPedido,
+      direccionDefaul:( DireccionDefaul.calle+" "+DireccionDefaul.numero+","+DireccionDefaul.ciudad+" "+DireccionDefaul.cpcode+","+DireccionDefaul.provincia),     
+      DateSending:date  
+    }
+  };
+
+  // trigger the sending of the E-mail
+  transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+        return console.log(error);
+    }
+    console.log('Message sent: ' + info.response);
+  });
+  const okMsg = JSON.stringify('Message sent properly')
+    res.status(200).send(okMsg)
+})
+// endpoint de producto se ha entregado
+app.post('/email/v1/delivered',(req,res)=>{
+  console.log(req.body);
+  const data = req.body;
+  let tiempoTranscurrido= Date.now();
+  var date = new Date(tiempoTranscurrido)
+  console.log("-->>",)
+  let DireccionDefaul = data.DireccionDefaul;
+  // initialize nodemailer
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+    port:465,//587,
+    segure: true,//par no ssl
+    auth:{
+      user:'vestazproducts@gmail.com',
+      pass:'hzxdstbjhtemkqgk'
+    },
+  });
+
+  // point to the template folder
+  const handlebarOptions = {
+    viewEngine: {
+        partialsDir: path.resolve('./views/'),
+        defaultLayout: false,
+    },
+    viewPath: path.resolve('./views/'),
+  };
+
+  // use a template file with nodemailer
+  transporter.use('compile', hbs(handlebarOptions))
+
+  var mailOptions = {
+    from:"'Vesta-Z Entrega'<pedidos@vestaz.es>", // sender address
+    to:data.email,//req.body.email , // list of receivers
+    subject: 'Producto Entregado',
+    template: 'delivered', // the name of the template file i.e email.handlebars
+    context:{
+      name: data.name, // replace {{name}} 
+      email: data.email, // replace {{email}} 
+      idPedido:data.idPedido,
+      direccionDefaul:( DireccionDefaul.calle+" "+DireccionDefaul.numero+","+DireccionDefaul.ciudad+" "+DireccionDefaul.cpcode+","+DireccionDefaul.provincia),     
+      DateSending:date  
+    }
+  };
+
+  // trigger the delivered of the E-mail
+  transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+        return console.log(error);
+    }
+    console.log('Message sent: ' + info.response);
+  });
+  const okMsg = JSON.stringify('Message sent properly')
+    res.status(200).send(okMsg)
+})
+// endpoint de producto ha comenzado la devolucion
+app.post('/email/v1/return',(req,res)=>{
+  console.log(req.body);
+  const data = req.body;
+  let tiempoTranscurrido= Date.now();
+  var date = new Date(tiempoTranscurrido)
+  console.log("es la fecha -->>",)
+  let DireccionDefaul = data.DireccionDefaul;
+  // initialize nodemailer
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+    port:465,//587,
+    segure: true,//par no ssl
+    auth:{
+      user:'vestazproducts@gmail.com',
+      pass:'hzxdstbjhtemkqgk'
+    },
+  });
+
+  // point to the template folder
+  const handlebarOptions = {
+    viewEngine: {
+        partialsDir: path.resolve('./views/'),
+        defaultLayout: false,
+    },
+    viewPath: path.resolve('./views/'),
+  };
+
+  // use a template file with nodemailer
+  transporter.use('compile', hbs(handlebarOptions))
+
+  var mailOptions = {
+    from:"'Vesta-Z (Soporte)'<pedidos@vestaz.es>", // sender address
+    to:data.email,//req.body.email , // list of receivers
+    subject: 'Producto Devuelto',
+    template: 'return', // the name of the template file i.e email.handlebars
     context:{
       name: data.name, // replace {{name}} 
       email: data.email, // replace {{email}} 
@@ -474,7 +639,6 @@ app.post('/webhook',async(request,response)=>{
     delete ItemsMeta.email;
     delete ItemsMeta.uid;
     let DireccionDefaul=  await traerDireccion(UserUidPedido)
-    
     
     
     contentHTML =`

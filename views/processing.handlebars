@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
-  <title>Sending Email</title>
+  <title>Processing Email</title>
 </head>
 <body>
   <style>
-    .logoContainer {
+{{!--     .logoContainer {
       background-color: #000;
-    }
+    } --}}
     .logoContainer > img {
-      max-width: 150px;
+      width: 50px;
     }
     .alertNotification {
       display: flex;
@@ -33,11 +33,11 @@
     <img src="https://firebasestorage.googleapis.com/v0/b/vestaz.appspot.com/o/deliver.png?alt=media&token=32e10616-0aae-4bfc-8755-d861ce464eb7" alt="deliver">
   </div>
   <h2>Hola {{name}},</h2>
-  <p>¡Tenemos buenas noticias para usted! Su pedido con identificador: {{idPedido}}, realizado el {{DateSending}}, acaba de ser embalado en nuestro almacén y está listo para ser enviado a: {{direccionDefaul}} </p>
+  <p>¡Tenemos buenas noticias! Su pedido con identificador: {{idPedido}}, se esta procesando a fecha {{DateSending}}, te notificaremos cuando inicie el envío de tu pedido a: {{direccionDefaul}} </p>
   <p>Id del pedido:{{idPedido}}. </p>
   <p>Correo Electrónico: {{email}}. </p>
-  <p>Direccion de envío:{{direccionDefaul}}. </p>
-  <p>Fecha de envío:{{DateSending}}. </p>
+  <p>Dirección de envío:{{direccionDefaul}}. </p>
+  <p>Fecha de procesos:{{DateSending}}. </p>
   <br>
   <article class="alertNotification">
     <div class="svgContainer">
