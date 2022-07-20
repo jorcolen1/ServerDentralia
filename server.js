@@ -17,7 +17,7 @@ const app = express();
 app.use(express.static('public'));
 app.use(express.json());//servidor entiende datos en formato JSON
 
-const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/Subpages';
+const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com/';
 //const YOUR_DOMAIN = 'http://192.168.1.98/';
 
 
