@@ -768,10 +768,10 @@ app.post('/create-checkout-session', async (req, res) => {
   let UserUid = req.body.uid;
   delete req.body.email;
   delete req.body.uid;
-  //let ArrayTtems= toArrayStripe(req.body);
+  let ArrayTtems= toArrayStripe(req.body);
   //console.log("el contenido del array para metadatos",ArrayMeta)
   //console.log("el contenido del array",ArrayTtems)
-  /* const session = await stripe.checkout.sessions.create({
+  const session = await stripe.checkout.sessions.create({
     line_items: ArrayTtems,  
     customer_email: UserEmail,
     //receipt_email: 'jorcolen@gmail.com',
@@ -781,10 +781,10 @@ app.post('/create-checkout-session', async (req, res) => {
     //metadata: {"email":"user1@gmail.com","uid":"DOP9zgsRoSgrRq8C9KOwKHw3GfB3"},
     success_url: `${YOUR_DOMAIN1}/success.html`,
     cancel_url: `${YOUR_DOMAIN1}/cancel.html`,
-  }); */
-  console.log("okokokokokokokokok");
-  res.redirect(303, "session.url");
-  //res.json({id:session.id}) valida
+  });
+  //console.log("okokokokokokokokok");
+  //res.redirect(303, "session.url");
+  res.json({id:session.id}) 
 });
 
 const PORT = process.env.PORT || 4242
