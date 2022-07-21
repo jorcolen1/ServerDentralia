@@ -1,0 +1,9 @@
+{ 
+    "tipo":"create-checkout-session",
+    "req":{
+        "email":"jorcolen@gmail.com","uid":"xYjg9OhXiuMmdcJmlCn9AkABYx23","3lrzdULnxdQSOG0btR70":{"id":"3lrzdULnxdQSOG0btR70","name":"Junta de culata","precio":"45","stock":8,"cantidad":1},"IapGSfZ11HaLUlvKF1sn":{"id":"IapGSfZ11HaLUlvKF1sn","name":"Juego parte alta","precio":"40","stock":15,"cantidad":2},"uFqmNIzRXoaoA8U8OM04":{"id":"uFqmNIzRXoaoA8U8OM04","name":"Correa","precio":"20","stock":"20","cantidad":1},"HfiOjyvKMz3y5oODytwN":{"id":"HfiOjyvKMz3y5oODytwN","name":"Tensor de correa","precio":"40","stock":3,"cantidad":1},"scx5FQTF6s2cbMTp2CMG":{"id":"scx5FQTF6s2cbMTp2CMG","name":"Bomba de alimentacion","precio":"80","stock":5,"cantidad":2}}
+    },
+    "res":{
+
+    }
+}

@@ -18,6 +18,7 @@ app.use(express.static('public'));
 app.use(express.json());//servidor entiende datos en formato JSON
 
 const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com';
+const YOUR_DOMAIN1 = 'https://testingserver-vesta.herokuapp.com/Subpages';
 //const YOUR_DOMAIN = 'http://192.168.1.98/';
 
 
@@ -70,7 +71,6 @@ function ensureToken(req, res, next){
   }
 }
 
-
 //////0----------------------------------------------------------
 
 // Configurar cabeceras y cors
@@ -81,7 +81,7 @@ function ensureToken(req, res, next){
   res.header('Allow', 'GET, POST, OPTIONS, PUT, DELETE');
   next();
 }); 
-
+/* 
 app.use((req, res, next) => {
   const origin = req.headers.origin
   console.log("eesss__>>>>>>>>",req.headers)
@@ -93,7 +93,7 @@ app.use((req, res, next) => {
   } else {
     next()  
   }
-});
+}); */
 
 app.get('/', (req, res, next) => {
   const origin = req.headers.origin
@@ -630,26 +630,25 @@ app.post('/webhook',async(request,response)=>{
   // encender tunel: stripe listen --forward-to localhost:4242/webhook
   //const sig = request.headers['stripe-signature']
   const payload =request.body;
-  //console.log('el payload: '+ JSON.stringify(payload));
-  //console.log('el payload en variable: ',payload);
+  console.log('el payload: '+ JSON.stringify(payload));
+  console.log('el payload en variable: ',payload);
    const tipoRequest=payload.type;
    var userEmail='',userValor='',utcSeconds='',userDate='',itemsBuy='';
-  if (tipoRequest === "checkout.session.completed"){
+  if (tipoRequest === "checkout.session.completed" && userEmail!== ''){
     //console.log('el payload: ',JSON.stringify(payload));
     userEmail=payload.data.object.customer_details.email;
     userValor=payload.data.object.amount_total;
     utcSeconds=payload.created;
     userDate= new Date(utcSeconds*1000);
-    itemsBuy=payload.data.object.metadata;
-    GuardarPedido(itemsBuy,userDate);
-    //Guardartransaccion(itemsBuy);
+    itemsBuy=payload.data.object.metadata;//Aqui procesar a itemsBuy
+    console.log("los metadatos en stripe:",itemsBuy)
+    //GuardarPedido(itemsBuy,userDate);
     let ItemsMeta=JSON.parse(itemsBuy[0]);
     let UserEmailPedido = ItemsMeta.email;
     let UserUidPedido = ItemsMeta.uid;
     delete ItemsMeta.email;
     delete ItemsMeta.uid;
     let DireccionDefaul=  await traerDireccion(UserUidPedido)
-    
     
     contentHTML =`
     <h1>Informacion de pago Realizado</h1>
@@ -703,8 +702,9 @@ app.post('/webhook',async(request,response)=>{
   })
 
   }else{
-
+    console.log('por el no del Webhook')
   }
+  
   let event;
   try {
     //event = stripe.webhooks.constructEvent(payload,sig,endpointSecret)
@@ -716,7 +716,7 @@ app.post('/webhook',async(request,response)=>{
   response.status(200);  
 })
 
-function  toArraycarrito(reqbody){
+function  toArrayStripe(reqbody){
   let NumObjet = Object.keys(reqbody);
   let ArrayItems = Object.keys(reqbody);
   //console.log(reqbody[NumObjet[0]].name);
@@ -738,32 +738,53 @@ function  toArraycarrito(reqbody){
   //console.log("el contenido del array",ArrayItems)
   return ArrayItems
 }
+function  toArrayMetadata(itemsBuy){
+  console.log("el contenido del array",itemsBuy)
+  let ArrayData=[{"email": itemsBuy.email, "uid": itemsBuy.uid}]
+  delete itemsBuy.email
+  delete itemsBuy.uid
+  let NumObjet = Object.keys(itemsBuy);
+  let ArrayItems = Object.keys(itemsBuy);
+  //console.log(reqbody[NumObjet[0]].name);
+  for(var i=0; i<NumObjet.length ; i++){
+    ArrayItems[i]={[i]:itemsBuy[NumObjet[i]]}
+    //ArrayItems[i]=itemsBuy[NumObjet[i]]
+  }
+  console.log("11111",ArrayData[0])
+  console.log("22222--->>>",ArrayItems)
+  ArrayData=ArrayData.concat(ArrayItems);
+  console.log("=======",ArrayData)
+
+  return ArrayItems
+}
 
                   /*----Crear el pago en Stripe---- */
 app.post('/create-checkout-session', async (req, res) => {
   //Encender servidor:npm rum dev
-  //console.log(req.body);
-  let itemsBuy = JSON.stringify(req.body);
+  //console.log(JSON.stringify(req.body));
+  let itemsBuy = req.body;
+  let ArrayMeta= toArrayMetadata(itemsBuy);
   let UserEmail = req.body.email;
   let UserUid = req.body.uid;
   delete req.body.email;
   delete req.body.uid;
-  let ArrayTtems= toArraycarrito(req.body);
-  //console.log("el contenido del array",itemsBuy)
+  //let ArrayTtems= toArrayStripe(req.body);
+  //console.log("el contenido del array para metadatos",ArrayMeta)
   //console.log("el contenido del array",ArrayTtems)
-  const session = await stripe.checkout.sessions.create({
+  /* const session = await stripe.checkout.sessions.create({
     line_items: ArrayTtems,  
     customer_email: UserEmail,
     //receipt_email: 'jorcolen@gmail.com',
     mode: 'payment',
     metadata:[itemsBuy],
+    //metadata:[itemsBuy],
     //metadata: {"email":"user1@gmail.com","uid":"DOP9zgsRoSgrRq8C9KOwKHw3GfB3"},
-    success_url: `${YOUR_DOMAIN}/success.html`,
-    cancel_url: `${YOUR_DOMAIN}/cancel.html`,
-  });
-  //console.log(session);
-  //res.redirect(303, session.url);
-  res.json({id:session.id})
+    success_url: `${YOUR_DOMAIN1}/success.html`,
+    cancel_url: `${YOUR_DOMAIN1}/cancel.html`,
+  }); */
+  console.log("okokokokokokokokok");
+  res.redirect(303, "session.url");
+  //res.json({id:session.id}) valida
 });
 
 const PORT = process.env.PORT || 4242
