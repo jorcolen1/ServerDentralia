@@ -24,7 +24,7 @@ const YOUR_DOMAIN1 = 'https://testingserver-vesta.herokuapp.com/Subpages';
 
 //////0----------------------------------------------------------
 
-app.get('/hi',(req,res) => {
+/* app.get('/hi',(req,res) => {
   res.json({
     text:'api works!!!!'
   });
@@ -69,18 +69,18 @@ function ensureToken(req, res, next){
   }else{
     res.sendStatus(403)// no permitido
   }
-}
+} */
 
 //////0----------------------------------------------------------
 
 // Configurar cabeceras y cors
-/*  app.use((req, res, next) => {
+  app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   res.header('Allow', 'GET, POST, OPTIONS, PUT, DELETE');
   next();
-});  */
+});  
 /* 
 app.use((req, res, next) => {
   const origin = req.headers.origin
