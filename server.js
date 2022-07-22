@@ -762,7 +762,8 @@ function  toArrayMetadata(itemsBuy){
 app.post('/create-checkout-session', async (req, res) => {
   //Encender servidor:npm rum dev
   //console.log(JSON.stringify(req.body));
-  let itemsBuy = req.body;
+  //let itemsBuy = req.body;
+  let itemsBuy = JSON.stringify(req.body);
   let ArrayMeta= toArrayMetadata(itemsBuy);
   let UserEmail = req.body.email;
   let UserUid = req.body.uid;
