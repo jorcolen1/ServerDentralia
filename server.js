@@ -762,9 +762,10 @@ function  toArrayMetadata(itemsBuy){
 app.post('/create-checkout-session', async (req, res) => {
   //Encender servidor:npm rum dev
   //console.log(JSON.stringify(req.body));
-  //let itemsBuy = req.body;
+  let itemsBuy1 = req.body;
   let itemsBuy = JSON.stringify(req.body);
-  let ArrayMeta= toArrayMetadata(itemsBuy);
+  let ArrayMeta= toArrayMetadata(itemsBuy1);
+  let itemsBuyNew = JSON.stringify(ArrayMeta);
   let UserEmail = req.body.email;
   let UserUid = req.body.uid;
   delete req.body.email;
@@ -777,7 +778,7 @@ app.post('/create-checkout-session', async (req, res) => {
     customer_email: UserEmail,
     //receipt_email: 'jorcolen@gmail.com',
     mode: 'payment',
-    metadata:[itemsBuy],
+    metadata:[itemsBuyNew],
     //metadata:[itemsBuy],
     //metadata: {"email":"user1@gmail.com","uid":"DOP9zgsRoSgrRq8C9KOwKHw3GfB3"},
     success_url: `${YOUR_DOMAIN1}/success.html`,
