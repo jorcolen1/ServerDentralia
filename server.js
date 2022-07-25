@@ -528,15 +528,30 @@ async function SendConfirSellers(emailSeller,Contenido,DireccionDefaul,userDate)
 
 // Funcion principal 
 async function GuardarPedido(itemsBuy,userDate){
-  let ItemsMeta=JSON.parse(itemsBuy[0]);
-  let UserEmailPedido = ItemsMeta.email;
-  let UserUidPedido = ItemsMeta.uid;
-  delete ItemsMeta.email;
-  delete ItemsMeta.uid;
-  let DireccionDefaul= await traerDireccion(UserUidPedido)
-  //console.log("direccion Valida",DireccionDefaul)
 
-  let tiempoTranscurrido= Date.now();
+    let UserEmailPedido = itemsBuy.email;
+    let UserUidPedido = itemsBuy.uid;
+    delete itemsBuy.email;
+    delete itemsBuy.uid;
+    //console.log("eliminando algunos:",itemsBuy)// todo el Array
+
+    let NumObjet0 = Object.keys(itemsBuy);
+    let ArrayItems= {}
+    for(var i=0; i<NumObjet0.length ; i++){
+      ArrayItems[i]=JSON.parse(itemsBuy[i])
+      ArrayItems[ArrayItems[NumObjet0[i]].id]=ArrayItems[i]
+      delete ArrayItems[i];
+    }
+    console.log("-->>>>>decosificasdos desde stripe",ArrayItems)
+
+  let ItemsMeta=ArrayItems;//decodificacion completada
+  //console.log("datos",ItemsMeta)
+  //console.log("uid Valida",UserUidPedido)
+  
+   let DireccionDefaul= await traerDireccion(UserUidPedido)
+  //console.log("direccion Valida",DireccionDefaul)
+ 
+   let tiempoTranscurrido= Date.now();
   //let datePayUnixUTC = datePay.getTime();
   let datePayHum = new Date(tiempoTranscurrido)
   //datePayGood= datePayHum.toLocaleDateString()+" "+datePayHum.toLocaleTimeString();
@@ -571,13 +586,14 @@ async function GuardarPedido(itemsBuy,userDate){
     let ItemsMetaState = Object.assign(objet_Individual,estado)
     ItemsMeta[NumObjet[i]]=ItemsMetaState;
     //console.log("objeto-->>>",i,ItemsMetaState)
-  }
+  } 
+  //console.log ("despues de agregar la fecha",ItemsMeta)
 
-  let irespTransacGlobal = await db.collection('Users').doc(UserUidPedido).collection('Pedidos').add(ItemsMeta);//Guarda Todos los pedidos id Auto
+   let irespTransacGlobal = await db.collection('Users').doc(UserUidPedido).collection('Pedidos').add(ItemsMeta);//Guarda Todos los pedidos id Auto
   let idTransacGlobal=irespTransacGlobal.id;
-  //console.log("idTransacGlobal:",idTransacGlobal)
+   console.log("idTransacGlobal:",idTransacGlobal)
 
-  for(var j=0; j<NumObjet.length ; j++){ //agregar la funcion de resta de la compra 
+   for(var j=0; j<NumObjet.length ; j++){ //agregar la funcion de resta de la compra 
     let restarCompraRef = db.collection('Productos').doc(NumObjet[j]);
     let doc = await restarCompraRef.get();
     let stock=doc.data().cantidad;
@@ -621,7 +637,7 @@ async function GuardarPedido(itemsBuy,userDate){
 
 
   //await db.collection('PedidosUsers').doc(UserUidPedido).set(ItemsMeta);//Guarda el ultimo pedido
-  await db.collection('CarritoUsers').doc(UserUidPedido).delete();
+  await db.collection('CarritoUsers').doc(UserUidPedido).delete(); 
   
 }
 
@@ -630,77 +646,23 @@ app.post('/webhook',async(request,response)=>{
   // encender tunel: stripe listen --forward-to localhost:4242/webhook
   //const sig = request.headers['stripe-signature']
   const payload =request.body;
-  console.log('el payload: '+ JSON.stringify(payload));
-  console.log('el payload en variable: ',payload);
+  /* console.log('el payload: '+ JSON.stringify(payload));
+  console.log('el payload en variable: ',payload); */
    const tipoRequest=payload.type;
    var userEmail='',userValor='',utcSeconds='',userDate='',itemsBuy='';
-  if (tipoRequest === "checkout.session.completed" && userEmail!== ''){
+  if (tipoRequest === "checkout.session.completed"){
     //console.log('el payload: ',JSON.stringify(payload));
     userEmail=payload.data.object.customer_details.email;
     userValor=payload.data.object.amount_total;
     utcSeconds=payload.created;
     userDate= new Date(utcSeconds*1000);
     itemsBuy=payload.data.object.metadata;//Aqui procesar a itemsBuy
-    console.log("los metadatos en stripe:",itemsBuy)
-    //GuardarPedido(itemsBuy,userDate);
-    let ItemsMeta=JSON.parse(itemsBuy[0]);
-    let UserEmailPedido = ItemsMeta.email;
-    let UserUidPedido = ItemsMeta.uid;
-    delete ItemsMeta.email;
-    delete ItemsMeta.uid;
-    let DireccionDefaul=  await traerDireccion(UserUidPedido)
     
-    contentHTML =`
-    <h1>Informacion de pago Realizado</h1>
-    <ul>
-      <li>Usuario: ${userEmail}</li>
-      <li>Valor: € ${userValor/100}</li>
-      <li>Fecha de pago: ${userDate.toLocaleString()}</li>
-      <br>
-      Envio: 
-      <li>Receptor de envío: ${DireccionDefaul.nombre} ${DireccionDefaul.apellidos} </li>
-      <li>Dirección de envío: ${DireccionDefaul.calle} ${DireccionDefaul.numero} , ${DireccionDefaul.ciudad} ${DireccionDefaul.cpcode} , ${DireccionDefaul.provincia}</li>
-      <li>Indicaciones de envío: ${DireccionDefaul.indicaciones} movil:${DireccionDefaul.telefono}</li>
-    </ul>
-    `;
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
-      port:465,//587,
-      segure: true,//par no ssl
-      auth:{
-        user:'vestazproducts@gmail.com',
-        pass:'hzxdstbjhtemkqgk'
-      },
-      /*//.......dev
-      host:'smtp.ethereal.email',//servidor smtp
-      port:587,
-      segure: false,//par no ssl
-      auth:{
-        user:'jenifer.lowe82@ethereal.email',
-        pass:'MRVfC1DCT3mY5N5wTk'
-      },*/
-      tls:{
-       // rejectUnauthorized:false
-      }
-    });
-    var mailconten ={
-      from:"'Vesta-Z Pedidos'<pedidos@vestaz.es>",
-      to: userEmail,
-      subject: 'Reporte de pago',
-      //text:'hello word',
-      html:contentHTML,
-    };
+    //console.log("los metadatos en stripe:",itemsBuy)// todo el Array
     
-    const info= await transporter.sendMail(mailconten,(error,info)=>{ 
-      if (error){
-      res.status(500).send(error.message);
-    }else{
-      console.log('mail enviado.');
-      res.status(200).jsonp(tipoRequest)
-    }
+    GuardarPedido(itemsBuy,userDate);
     
-  })
-
+    
   }else{
     console.log('por el no del Webhook')
   }
@@ -748,10 +710,8 @@ function  toArrayMetadata(itemsBuy){
   let ArrayItems= {}
   //console.log(itemsBuy[NumObjet[0]]);
   for(var i=0; i<NumObjet.length ; i++){
-    ArrayItems[itemsBuy[NumObjet[i]].id]=JSON.stringify (itemsBuy[NumObjet[i]])
-  //console.log("solo identificadores",ArrayItems)
-
-    //=itemsBuy[NumObjet[i]]
+    //ArrayItems[itemsBuy[NumObjet[i]].id]=JSON.stringify (itemsBuy[NumObjet[i]])
+    ArrayItems[i]=JSON.stringify (itemsBuy[NumObjet[i]])
   }
   //console.log("solo identificadores",ArrayItems)
   //console.log("11111",ArrayData)
@@ -768,23 +728,13 @@ app.post('/create-checkout-session', async (req, res) => {
   //Encender servidor:npm rum dev
   //console.log(JSON.stringify(req.body));
   let itemsBuy1 = req.body;
-  let itemsBuy = JSON.stringify(req.body);
   let ArrayMeta= toArrayMetadata(itemsBuy1);
-  let itemsBuyNew = (ArrayMeta);
   let UserEmail = req.body.email;
-  let UserUid = req.body.uid;
   delete req.body.email;
   delete req.body.uid;
   let ArrayTtems= toArrayStripe(req.body);
   //console.log("el contenido del array para metadatos",ArrayMeta)
   //console.log("el contenido del array",ArrayTtems)
-  let hola={
-  id: 'IapGSfZ11HaLUlvKF1sn',
-  name: 'Juego parte alta',
-  precio: '40',
-  stock: 15,
-  cantidad: 6
-}
   let objetToStripe={
     line_items: ArrayTtems,  
     customer_email: UserEmail,
@@ -798,10 +748,7 @@ app.post('/create-checkout-session', async (req, res) => {
   }
   console.log('objeto a enviar:::::::::::::::::::::::::::::::::')
   console.log('----->',objetToStripe)
-  //console.log('objeto a enviar::::::::::::22222222222222222222222222222222:::::::::::::::::::::::::::::::::')
-  //console.log('----->',objetToStripe)
   const session = await stripe.checkout.sessions.create(objetToStripe);
-  
   console.log("okokokokokokokokok");
   //res.redirect(303, "session.url");
   res.json({id:session.id}) 
