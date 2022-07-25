@@ -739,23 +739,28 @@ function  toArrayStripe(reqbody){
   return ArrayItems
 }
 function  toArrayMetadata(itemsBuy){
-  console.log("el contenido del array",itemsBuy)
-  let ArrayData=[{"email": itemsBuy.email, "uid": itemsBuy.uid}]
+  //console.log("el contenido del array",itemsBuy)
+  let ArrayData={"email": itemsBuy.email, "uid": itemsBuy.uid}
   delete itemsBuy.email
   delete itemsBuy.uid
+  let itemsBuy1= itemsBuy
   let NumObjet = Object.keys(itemsBuy);
-  let ArrayItems = Object.keys(itemsBuy);
-  //console.log(reqbody[NumObjet[0]].name);
+  let ArrayItems= {}
+  //console.log(itemsBuy[NumObjet[0]]);
   for(var i=0; i<NumObjet.length ; i++){
-    ArrayItems[i]={[i]:itemsBuy[NumObjet[i]]}
-    //ArrayItems[i]=itemsBuy[NumObjet[i]]
-  }
-  console.log("11111",ArrayData[0])
-  console.log("22222--->>>",ArrayItems)
-  ArrayData=ArrayData.concat(ArrayItems);
-  console.log("=======",ArrayData)
+    ArrayItems[itemsBuy[NumObjet[i]].id]=JSON.stringify (itemsBuy[NumObjet[i]])
+  //console.log("solo identificadores",ArrayItems)
 
-  return ArrayItems
+    //=itemsBuy[NumObjet[i]]
+  }
+  //console.log("solo identificadores",ArrayItems)
+  //console.log("11111",ArrayData)
+  //console.log("22222--->>>",ArrayItems)
+  let allData= {...ArrayData, ...ArrayItems}
+  //ArrayData=ArrayData.concat(ArrayItems);
+  //console.log("=======",allData)
+
+  return allData
 }
 
                   /*----Crear el pago en Stripe---- */
@@ -787,28 +792,17 @@ app.post('/create-checkout-session', async (req, res) => {
     mode: 'payment',
     //metadata:itemsBuyNew,
     //metadata:[itemsBuy],
-    metadata: {
-    "email":"user1@gmail.com","uid":"DOP9zgsRoSgrRq8C9KOwKHw3GfB3",
-    "IapGSfZ11HaLUlvKF1sn1": JSON.stringify(hola),
-    "IapGSfZ11HaLUlvKF1sn2": JSON.stringify(hola),
-    "IapGSfZ11HaLUlvKF1sn3": JSON.stringify(hola),
-    "IapGSfZ11HaLUlvKF1sn4": JSON.stringify(hola),
-    "IapGSfZ11HaLUlvKF1sn5": JSON.stringify(hola),
-    "IapGSfZ11HaLUlvKF1sn6": JSON.stringify(hola),
-    "IapGSfZ11HaLUlvKF1sn7": JSON.stringify(hola),
-    "IapGSfZ11HaLUlvKF1sn8": JSON.stringify(hola),
-    "IapGSfZ11HaLUlvKF1sn9": JSON.stringify(hola),
-    "IapGSfZ11HaLUlvKF1sn00": JSON.stringify(hola),
-    "IapGSfZ11HaLUlvKF1sn": JSON.stringify(hola),
-  },
+    metadata: ArrayMeta,
     success_url: `${YOUR_DOMAIN1}/success.html`,
     cancel_url: `${YOUR_DOMAIN1}/cancel.html`,
   }
   console.log('objeto a enviar:::::::::::::::::::::::::::::::::')
   console.log('----->',objetToStripe)
-
+  //console.log('objeto a enviar::::::::::::22222222222222222222222222222222:::::::::::::::::::::::::::::::::')
+  //console.log('----->',objetToStripe)
   const session = await stripe.checkout.sessions.create(objetToStripe);
-  //console.log("okokokokokokokokok");
+  
+  console.log("okokokokokokokokok");
   //res.redirect(303, "session.url");
   res.json({id:session.id}) 
 });
