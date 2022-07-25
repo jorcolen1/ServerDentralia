@@ -646,11 +646,11 @@ app.post('/webhook',async(request,response)=>{
   // encender tunel: stripe listen --forward-to localhost:4242/webhook
   //const sig = request.headers['stripe-signature']
   const payload =request.body;
-  /* console.log('el payload: '+ JSON.stringify(payload));
-  console.log('el payload en variable: ',payload); */
+  console.log('el payload: '+ JSON.stringify(payload));
+  console.log('el payload en variable: ',payload); 
    const tipoRequest=payload.type;
    var userEmail='',userValor='',utcSeconds='',userDate='',itemsBuy='';
-  if (tipoRequest === "checkout.session.completed"){
+  if (tipoRequest === "checkout.session.completed" && itemsBuy!==''){
     //console.log('el payload: ',JSON.stringify(payload));
     userEmail=payload.data.object.customer_details.email;
     userValor=payload.data.object.amount_total;
@@ -661,7 +661,7 @@ app.post('/webhook',async(request,response)=>{
     //console.log("los metadatos en stripe:",itemsBuy)// todo el Array
     
     GuardarPedido(itemsBuy,userDate);
-    
+
     
   }else{
     console.log('por el no del Webhook')
