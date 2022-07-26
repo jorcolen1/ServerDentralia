@@ -791,6 +791,7 @@ function  toArrayMetadata(itemsBuy){
                   /*----Crear el pago en Stripe---- */
 app.post('/create-checkout-session', async (req, res) => {
   //Encender servidor:npm rum dev
+  // ver logs diferentes remotes: heroku logs --tail --remote heroku
   //console.log(JSON.stringify(req.body));
   let itemsBuy1 = req.body;
   let ArrayMeta= toArrayMetadata(itemsBuy1);
