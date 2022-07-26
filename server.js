@@ -661,6 +661,65 @@ app.post('/webhook',async(request,response)=>{
     //console.log("los metadatos en stripe:",itemsBuy)// todo el Array
     
     GuardarPedido(itemsBuy,userDate);
+
+    //let ItemsMeta=JSON.parse(itemsBuy[0]);
+    let UserEmailPedido = itemsBuy.email;
+    let UserUidPedido = itemsBuy.uid;
+    delete itemsBuy.email;
+    delete itemsBuy.uid;
+    let DireccionDefaul=  await traerDireccion(UserUidPedido)
+    
+    contentHTML =`
+    <h1>Informacion de pago Realizado</h1>
+    <ul>
+      <li>Usuario: ${userEmail}</li>
+      <li>Valor: € ${userValor/100}</li>
+      <li>Fecha de pago: ${userDate.toLocaleString()}</li>
+      <br>
+      Envio: 
+      <li>Receptor de envío: ${DireccionDefaul.nombre} ${DireccionDefaul.apellidos} </li>
+      <li>Dirección de envío: ${DireccionDefaul.calle} ${DireccionDefaul.numero} , ${DireccionDefaul.ciudad} ${DireccionDefaul.cpcode} , ${DireccionDefaul.provincia}</li>
+      <li>Indicaciones de envío: ${DireccionDefaul.indicaciones} movil:${DireccionDefaul.telefono}</li>
+    </ul>
+    `;
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtp
+      port:465,//587,
+      segure: true,//par no ssl
+      auth:{
+        user:'vestazproducts@gmail.com',
+        pass:'hzxdstbjhtemkqgk'
+      },
+      /*//.......dev
+      host:'smtp.ethereal.email',//servidor smtp
+      port:587,
+      segure: false,//par no ssl
+      auth:{
+        user:'jenifer.lowe82@ethereal.email',
+        pass:'MRVfC1DCT3mY5N5wTk'
+      },*/
+      tls:{
+       // rejectUnauthorized:false
+      }
+    });
+    var mailconten ={
+      from:"'Vesta-Z Pedidos'<pedidos@vestaz.es>",
+      to: userEmail,
+      subject: 'Reporte de pago',
+      //text:'hello word',
+      html:contentHTML,
+    };
+    
+    const info= await transporter.sendMail(mailconten,(error,info)=>{ 
+      if (error){
+      res.status(500).send(error.message);
+    }else{
+      console.log('mail enviado.');
+      res.status(200).jsonp(tipoRequest)
+    }
+    
+  
+  })
     
   }else{
     console.log('por el no del Webhook')
