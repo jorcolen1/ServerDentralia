@@ -811,10 +811,10 @@ app.post('/create-checkout-session', async (req, res) => {
     success_url: `${YOUR_DOMAIN1}/success.html`,
     cancel_url: `${YOUR_DOMAIN1}/cancel.html`,
   }
-  console.log('objeto a enviar:::::::::::::::::::::::::::::::::')
-  console.log('----->',objetToStripe)
+  //console.log('objeto a enviar:::::::::::::::::::::::::::::::::')
+  //console.log('----->',objetToStripe)
   const session = await stripe.checkout.sessions.create(objetToStripe);
-  console.log("sessionId devuelto",session.id );
+  console.log("sessionId devuelto::",session.id );
   //res.redirect(303, "session.url");
   res.json({id:session.id}) 
 });
