@@ -597,9 +597,11 @@ async function GuardarPedido(itemsBuy,userDate){
     let restarCompraRef = db.collection('Productos').doc(NumObjet[j]);
     let doc = await restarCompraRef.get();
     let stock=doc.data().cantidad;
+    console.log("En Productos stock:",stock)
+
     let uidSeller=doc.data().uidSeller;
     stock= stock-ItemsMeta[NumObjet[j]].cantidad;// control de stock
-    console.log("En Productos:",stock)
+    console.log("En nuevo stock:",stock)
     let res1 = await restarCompraRef.update({
       cantidad: stock
     });
@@ -608,7 +610,7 @@ async function GuardarPedido(itemsBuy,userDate){
     let res2 = await restarCompraRef2.update({
       cantidad: stock
     });
-    console.log("En Seller/Producto:",stock)
+    console.log("En final Seller/Producto: ",stock)
 
   }
   for(var k=0; k<NumObjet.length ; k++){ //agregar uidSeller a la transaccion   
