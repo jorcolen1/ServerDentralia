@@ -476,7 +476,7 @@ async function SendConfirSellers(emailSeller,Contenido,DireccionDefaul,userDate)
   <li>Cantidad: ${Contenido.cantidad}</li>
   <li>Total: € ${total}</li>
   <br>
-  <li>Fecha de pago: ${userDate.toLocaleString()}</li>
+  <li>Fecha de pago: ${userDate}</li>
   </ul>
   <ul>Envio:
     <li>Receptor de envío: ${DireccionDefaul.nombre} ${DireccionDefaul.apellidos} </li>
@@ -516,7 +516,7 @@ async function SendConfirSellers(emailSeller,Contenido,DireccionDefaul,userDate)
     if (error){
     res.status(500).send(error.message);
   }else{
-    console.log('mail enviado.');
+    console.log('mail enviado a cada seller');
     res.status(200).jsonp(tipoRequest)
   }
 
@@ -641,12 +641,11 @@ async function GuardarPedido(itemsBuy,userDate){
   
 }
 
-async function sendEmailUser (userEmail,userValor,userDate,itemsBuy){
-  console.log("valoresss",userEmail,userValor,itemsBuy)
-  let UserEmailPedido = itemsBuy.email;
-  let UserUidPedido = itemsBuy.uid;
-  delete itemsBuy.email;
-  delete itemsBuy.uid;
+async function sendEmail(userEmail,userValor,userDate,itemsBuy2){
+  console.log("valoresss",userEmail,userValor,itemsBuy2)
+  let UserEmailPedido = itemsBuy2.email;
+  let UserUidPedido = itemsBuy2.uid;
+
   let DireccionDefaul=  await traerDireccion(UserUidPedido)
   console.log("v222222",UserEmailPedido,UserUidPedido,DireccionDefaul)
 
@@ -695,14 +694,14 @@ async function sendEmailUser (userEmail,userValor,userDate,itemsBuy){
     if (error){
     res.status(500).send(error.message);
   }else{
-    console.log('mail enviado.');
+    console.log('mail enviado al User.');
     res.status(200).jsonp(tipoRequest)
   }
   
 
   })
-
 }
+
 const endpointSecret = 'whsec_432f059542cb8902a743c0e177bb0f1e8acc6e78b30154e05ffc95caeeb35273'
 app.post('/webhook',async(request,response)=>{
   // encender tunel: stripe listen --forward-to localhost:4242/webhook
@@ -719,10 +718,14 @@ app.post('/webhook',async(request,response)=>{
     utcSeconds=payload.created;
     userDate= new Date(utcSeconds*1000);
     itemsBuy=payload.data.object.metadata;//Aqui procesar a itemsBuy
+    itemsBuy2=payload.data.object.metadata;//Aqui procesar a itemsBuy
     
+    //console.log("los metadatos en stripe:",itemsBuy)// todo el Array
+    sendEmail(userEmail,userValor,userDate,itemsBuy2);
     GuardarPedido(itemsBuy,userDate);
-    sendEmailUser(userEmail,userValor,userDate,itemsBuy)
+
     
+
   }else{
     console.log('por el no del Webhook')
   }
