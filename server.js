@@ -655,7 +655,7 @@ async function sendEmailUser (userEmail,userValor,userDate,itemsBuy){
   <ul>
     <li>Usuario: ${userEmail}</li>
     <li>Valor: € ${userValor/100}</li>
-    <li>Fecha de pago: ${userDate.toLocaleString()}</li>
+    <li>Fecha de pago: ${userDate}</li>
     <br>
     Envio: 
     <li>Receptor de envío: ${DireccionDefaul.nombre} ${DireccionDefaul.apellidos} </li>
