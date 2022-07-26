@@ -814,7 +814,7 @@ app.post('/create-checkout-session', async (req, res) => {
   console.log('objeto a enviar:::::::::::::::::::::::::::::::::')
   console.log('----->',objetToStripe)
   const session = await stripe.checkout.sessions.create(objetToStripe);
-  console.log("okokokokokokokokok");
+  console.log("sessionId devuelto",session.id );
   //res.redirect(303, "session.url");
   res.json({id:session.id}) 
 });
