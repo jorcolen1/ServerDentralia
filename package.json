@@ -1,7 +1,7 @@
 {
   "name": "stripesample",
   "version": "1.0.0",
-  "description": "A sample Stripe implementation",
+  "description": "",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -19,8 +19,7 @@
     "jsonwebtoken": "^8.5.1",
     "morgan": "^1.10.0",
     "nodemailer": "^6.7.2",
-    "nodemailer-express-handlebars": "^5.0.0",
-    "stripe": "^7.63.1"
+    "nodemailer-express-handlebars": "^5.0.0"
   },
   "devDependencies": {
     "nodemon": "2.0.15"
