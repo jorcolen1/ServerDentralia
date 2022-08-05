@@ -125,36 +125,115 @@ app.get('/', (req, res, next) => {
   })
 });
 
+// Cambio de estados de los tickets
+const buyTicket = async(data) =>{
+  console.log('la peticion',data)
+
+  let dataUnix = Math.round((new Date()).getTime() / 1000)
+  
+  // Cambio de estado Principal
+  const ticketRef = db
+  .collection('Eventos').doc('w0T19FoOcwlGV7Ed3kq3')
+  .collection('Entradas').doc('1DrPv6x6f1Msj6P1QdgH');
+  const res = await ticketRef.update({estado: 'Vendido'});
+  
+  //Escritura del Log de entradas
+  const ticketRefLog = db
+  .collection('Eventos').doc('w0T19FoOcwlGV7Ed3kq3')
+  .collection('Entradas').doc('1DrPv6x6f1Msj6P1QdgH')
+  .collection('Logs').add({
+    dateUnix:dataUnix,
+    type:'Vendido',
+    uidSourse:data.sellerId,
+    place:"IP-Spain"
+  });
+ 
+  // escritura de Clientes respaldo de la compra 
+  const clientRef = db
+  .collection('Eventos').doc('w0T19FoOcwlGV7Ed3kq3')
+  .collection('Client').add(data);
+
+  /* const cityRef = db.collection('Eventos').doc('QGjIeXgeDv8qxKxcKQGn');
+  const doc = await cityRef.get();
+  if (!doc.exists) {
+    console.log('No such document!');
+  } else {
+    console.log('Document data:', doc.data());
+  } */
+
+}
+
 //conseguir el QR e Insertarlo en el PDF
 const getPdfQr = async(data) =>{
-  let uuid='121234234534hjnnbkjhfd'
-  try {
-    await QRCode.toFile('./views/images/imgQR.jpg', uuid);
-  } catch (err) {
-    console.error(err)
-  }
-  const doc = new PDFDocument();
+  let tickets=data.carrito
+  let dataEvento='';
+  let dataRecinto='';
+  const doc = new PDFDocument({autoFirstPage: false});
   doc.pipe(fs.createWriteStream('./views/images/output.pdf'));
-  //.text(`hola mundo con pdf kit ${filename} !`, 100, 100);
-  doc.image('views/images/logo.png', 50, 50, {width: 100});
-  doc.image('views/images/imgQR.jpg', 430, 115, {width: 100});
-  doc.fontSize(8).text(uuid,430,210);
-  doc.fontSize(20).text('Nombre del Evento-'+'(Ciudad)',50,130,{ align: 'left'});
-  doc.fontSize(18).text('Nombre del Recinto',50,150,{ align: 'left'});
-  doc.fontSize(14).text('Direccion del Recinto',50,170,{ align: 'left'});
-  doc.text('Ciudad del recinto',50,190,{ align: 'left'});
+  // traer datos del Evento
+  const EventoRef = db.collection('Eventos').doc(data.eventoId);
+  const Evento = await EventoRef.get();
+  if (!Evento.exists) {
+    console.log('No such document!');
+  } else {
+    dataEvento=Evento.data();
+  }
+  console.log('Evento data:', dataEvento);
 
-  doc.text('Fecha:24/06/2022 '+' Hora:21:30',50,230,{ align: 'left'});
-  doc.text('Zona: Tendido',50,250,{ align: 'left'});
-  
-  doc.text('Precio: 41,80$',50,280,{ align: 'left'});
-  doc.text('(38,00 + 4,80 gastos + seguro)',50,300,{ align: 'left'});
+  const RecintoRef = db.collection('Recintos').doc(dataEvento.recintoId);
+  const Recinto = await RecintoRef.get();
+  if (!Recinto.exists) {
+    console.log('No such document!');
+  } else {
+    dataRecinto=Recinto.data();
+  }
+  console.log('Recinto data:', dataRecinto);
 
-  doc.fontSize(8).text(`1) Es obligatorio para todos los asistentes llevar consigo el DNI. 2) Está reservado el derecho de admisión(Ley 17/97). 3)El horario de inicio y de apertura de puertas podrán sufrir cambios para cumplir con la normativa vigente en relación al Covid-19. 4) No se aceptaran cambios ni devoluciones. 5) La localidad adquirida da derecho a asistir al evento que corresponde y en la butaca/zona asignada. La suspension de dicho evento lleva consigo exclusivamente la devolucion del importe de la entrada(excluidos los gastos de gestión). 6) Es potestad de la organización permitir la entrada al recinto una vez comenzado el evento. 7) En caso de suspensión del evento, la organización se compromete a la devolución del importe de la entrada en el plazo máximo de 15 días hábiles a partir de la fecha del anuncio de la suspensión. 8) No será objeto de devolución aquellos supuestos en los que la suspensión o modificación se produjera una vez comenzado el evento o actividad recreativa y fuera por causa de fuerza mayor. Las malas condiciones climatológicas no dan derecho a devolución de la entrada. 9) Los menores de edad que tengan entre 0 y 13 años, ambos inclusive, podrán acceder al concierto acompañados por su padre/madre/tutor legal y presentar esta autorización correspondiente en el acceso al recinto. Los menores de edad que tengan entre 14 y 15 años, ambos inclusive, podrán acceder al concierto y presentando la autorización firmada por su padre/madre/tutor legal. 10) Cualquier entrada rota o con indicios de falsificación autorizará al organizador a privar a su portador del acceso al evento. 11) La organización del evento no se hace responsable de las entradas robadas. 12) Queda prohibido el acceso al recinto con cámara de foto y/o video (sea doméstica o profesional).Queda prohibido la utilización del flash para la realización de fotos con móviles. El incumplimiento de esta norma puede acarrear la expulsión del recinto sin derecho a devolución del importe de la entrada. 13) Queda prohibido introducir alcohol, sustancias ilegales, armas u objetos peligrosos. 14) Queda limitada la entrada y/o permanencia en el evento a toda persona que se encuentre en estado de embriaguez. 15) Todo asistente podrá ser sometido a un registro por el equipo de seguridad en el acceso al evento, siguiendo la normativa de Ley de Espectáculos Públicos y Seguridad Privada. 16) Salvo que se indique lo contrario a través de cartel informativo en el recinto, no está permitida la entrada de comida ni bebida del exterior salvo botella de agua pequeña (33cl) a la que se le quitará el tapón en el control de acceso.`
-  ,50,400,{ align: 'justify'});
+  let NumObjet0 = Object.keys(tickets);
+  //console.log('todo---->>',tickets)
+  for (var i = 0; i < NumObjet0.length; i++) {
+    console.log('longituddddd---->>',tickets[i].dbstring)
 
+    try {
+      await QRCode.toFile(`./views/images/imgQR${i}.jpg`,tickets[i].dbstring);
+    } catch (err) {
+      console.error('al generar el QR-->',err)
+    }
+
+    tickets[i].seguro? "":tickets[i].seguroPrice="0.00" ;
+    let pagoTotal=parseFloat((tickets[i].zonaPrice),10)+
+                  parseFloat((tickets[i].gestionPrice),10)+
+                  parseFloat((tickets[i].seguroPrice),10);
+
+    doc.addPage()
+    doc.image('views/images/logo.png', 50, 50, {width: 100});
+    doc.image(`./views/images/imgQR${i}.jpg`, 430, 220, {width: 100});
+    doc.fontSize(5).text(tickets[i].dbstring,440,315);
+    doc.fontSize(20).text(dataEvento.name+'-'+dataRecinto.province,50,130,{ align: 'left'});
+    doc.fontSize(18).text(dataRecinto.name,50,150,{ align: 'left'});
+    doc.fontSize(14).text(dataRecinto.address,50,170,{ align: 'left'});
+    doc.text(dataRecinto.location,50,190,{ align: 'left'});
+
+    doc.text(`Fecha:${dataEvento.unixDateStart} `+ ` Hora: ${dataEvento.hour}`,50,230,{ align: 'left'});
+    doc.text(`Zona: ${tickets[i].zonaName}`,50,250,{ align: 'left'});
+    
+    doc.text(`Precio: ${pagoTotal.toFixed(2)}€`,50,280,{ align: 'left'});
+    doc.text(`(Entrada: ${tickets[i].zonaPrice}€ + Gastos: ${tickets[i].gestionPrice}€ + Seguro: ${tickets[i].seguroPrice}€ )`,50,300,{ align: 'left'});
+
+    doc.fontSize(8).text(`1) Es obligatorio para todos los asistentes llevar consigo el DNI. 2) Está reservado el derecho de admisión(Ley 17/97). 3)El horario de inicio y de apertura de puertas podrán sufrir cambios para cumplir con la normativa vigente en relación al Covid-19. 4) No se aceptaran cambios ni devoluciones. 5) La localidad adquirida da derecho a asistir al evento que corresponde y en la butaca/zona asignada. La suspension de dicho evento lleva consigo exclusivamente la devolucion del importe de la entrada(excluidos los gastos de gestión). 6) Es potestad de la organización permitir la entrada al recinto una vez comenzado el evento. 7) En caso de suspensión del evento, la organización se compromete a la devolución del importe de la entrada en el plazo máximo de 15 días hábiles a partir de la fecha del anuncio de la suspensión. 8) No será objeto de devolución aquellos supuestos en los que la suspensión o modificación se produjera una vez comenzado el evento o actividad recreativa y fuera por causa de fuerza mayor. Las malas condiciones climatológicas no dan derecho a devolución de la entrada. 9) Los menores de edad que tengan entre 0 y 13 años, ambos inclusive, podrán acceder al concierto acompañados por su padre/madre/tutor legal y presentar esta autorización correspondiente en el acceso al recinto. Los menores de edad que tengan entre 14 y 15 años, ambos inclusive, podrán acceder al concierto y presentando la autorización firmada por su padre/madre/tutor legal. 10) Cualquier entrada rota o con indicios de falsificación autorizará al organizador a privar a su portador del acceso al evento. 11) La organización del evento no se hace responsable de las entradas robadas. 12) Queda prohibido el acceso al recinto con cámara de foto y/o video (sea doméstica o profesional).Queda prohibido la utilización del flash para la realización de fotos con móviles. El incumplimiento de esta norma puede acarrear la expulsión del recinto sin derecho a devolución del importe de la entrada. 13) Queda prohibido introducir alcohol, sustancias ilegales, armas u objetos peligrosos. 14) Queda limitada la entrada y/o permanencia en el evento a toda persona que se encuentre en estado de embriaguez. 15) Todo asistente podrá ser sometido a un registro por el equipo de seguridad en el acceso al evento, siguiendo la normativa de Ley de Espectáculos Públicos y Seguridad Privada. 16) Salvo que se indique lo contrario a través de cartel informativo en el recinto, no está permitida la entrada de comida ni bebida del exterior salvo botella de agua pequeña (33cl) a la que se le quitará el tapón en el control de acceso.`
+    ,50,400,{ align: 'justify'});
+  }
   doc.end();
   console.log('pdfCreado')
+
+  try {
+    for (var i = 0; i < NumObjet0.length; i++) {
+      fs.unlinkSync(`./views/images/imgQR${i}.jpg`)
+      console.log('QR removed')
+    }
+  } catch(err) {
+    console.error('Something wrong happened removing the QR', err)
+  }
 }
 
 //enviar notificacion de correo
@@ -208,22 +287,15 @@ const sentTicket = async(data) =>{
 // endpoint ticket comprado
 app.post('/ticket/v1/bought1',(req,res)=>{
   const data = req.body;
-  console.log('la peticion',data)
-  async function traerdatos(){  
-    const cityRef = db.collection('Eventos').doc('QGjIeXgeDv8qxKxcKQGn');
-    const doc = await cityRef.get();
-    if (!doc.exists) {
-      console.log('No such document!');
-    } else {
-      console.log('Document data:', doc.data());
-    }
-  }
-//traerdatos();
+  //console.log('la peticion',data)
+  
+  //buyTicket(data);
   getPdfQr(data);
-  res.json({Bien:"ok"})
+  //sentTicket(data);
+  res.json({Bien:"solo el Pdf varios"})
 })
 
-// endpoint de bienvenida
+// endpoint de testing
 app.post('/ticket/v1/bought',(req,res)=>{
   const data = req.body;
   console.log('Parametros de Compra:',data);
