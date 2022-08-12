@@ -148,15 +148,15 @@ const buyTicket = async(data) =>{
       dateUnix:dataUnix,
       type:'Vendido',
       uidSourse:data.sellerId,
-      placeIPBuy:"IP-Spain"
+      placeIPBuy:data.direccionIP,
+      executorFunction: 'server'
     });
 
   }
  
   let controlData={
     dateTransaction :dataUnix,
-    statusTransaction :'Valida',
-    errormessage :''
+    statusTransaction :'Valida'
   }
   let dataAll = Object.assign(data,controlData)
 
@@ -173,7 +173,8 @@ const buyTicket = async(data) =>{
     dateUnix:dataUnix,
     type:'Valida',
     uidSourse:data.sellerId,
-    placeIPBuy:"IP-Spain"
+    placeIPBuy:data.direccionIP,
+    executorFunction: 'server'
   });
 
   console.log('3 se escribe la base de datos')
@@ -184,7 +185,6 @@ const fetchImage = async (src) => {
   src===""? src= "https://firebasestorage.googleapis.com/v0/b/eventicket-ee2d5.appspot.com/o/varios%2Flogo.png?alt=media&token=e937305b-6696-4683-8536-938980e52a28": src=src;
   const response = await fetch(src);
   const image = await response.buffer();
-
   return image;
 };
 
@@ -357,7 +357,7 @@ app.post('/ticket/v1/bought1',(req,res)=>{
   
   getPdfQr(data);
   buyTicket(data);
-  res.json({Bien:``})
+  res.json({status:`ok`,email:data.cliente.email})
 })
 
 // endpoint de testing
