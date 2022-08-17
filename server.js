@@ -131,10 +131,13 @@ const buyTicket = async(data) =>{
   //console.log('la peticion',data)
   let tickets=data.carrito
   let dataUnix = Math.round((new Date()).getTime() / 1000)
+  console.log('Antess<<<<<<<<<',data.carrito)
   
   let NumObjet0 = Object.keys(tickets);
   for (var i = 0; i < NumObjet0.length; i++) {  
     // Cambio de estado Principal
+    //console.log('Antess<<<<<<<<<',tickets[i])
+
     const ticketRef = db
     .collection('Eventos').doc(data.eventoId)
     .collection('Entradas').doc(tickets[i].dbid);
@@ -152,12 +155,19 @@ const buyTicket = async(data) =>{
       executorFunction: 'server'
     });
 
+    tickets[i].estado = 'Vendido'
+    //console.log('Despues>>>>>>>>>',tickets[i])
+
   }
+  data.carrito = tickets
+  console.log('Despues>>>>>>>>>',data.carrito)
+
  
   let controlData={
     dateTransaction :dataUnix,
     statusTransaction :'Valida'
   }
+  
   let dataAll = Object.assign(data,controlData)
 
   // escritura de Transactions respaldo de la compra 
@@ -355,7 +365,7 @@ app.post('/ticket/v1/bought1',(req,res)=>{
   const data = req.body;
   //console.log('la peticion',data)
   
-  getPdfQr(data);
+  //getPdfQr(data);
   buyTicket(data);
   res.json({status:`ok`,email:data.cliente.email})
 })
@@ -365,7 +375,7 @@ app.post('/ticket/v1/bought',(req,res)=>{
   const data = req.body;
   console.log('Parametros de Compra:',data);
   
-  getPdfQr(data);
+  //getPdfQr(data);
   sentTicket(data);
 
   res.json({Bien:"ok"})
