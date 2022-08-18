@@ -24,7 +24,8 @@
     "nodemailer": "^6.7.2",
     "nodemailer-express-handlebars": "^5.0.0",
     "pdfkit": "^0.13.0",
-    "qrcode": "^1.5.1"
+    "qrcode": "^1.5.1",
+    "redsys-api": "^0.0.3"
   },
   "devDependencies": {
     "nodemon": "2.0.15"

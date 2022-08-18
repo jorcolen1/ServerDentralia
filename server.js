@@ -1,5 +1,4 @@
 // This is your test secret API key.
-const stripe = require('stripe')('sk_test_51KDsabCEfvUCezSL48udO57i0YcetQIW8fhmJDv7CmFccF1B0ZfOjgqUmJQHh8KKU1KANxzKa4MMFQiNxhZO8MWg00pJMhTfjX');
 const express = require('express');
 const cors = require('cors')
 const hbs = require('nodemailer-express-handlebars')
@@ -14,6 +13,7 @@ const https = require('https');
 const PDFDocument = require('pdfkit');
 var QRCode = require('qrcode')
 const fetch = require('node-fetch');
+const RedsysAPI = require('redsys-api')
 
 //var html_to_pdf = require('html-pdf-node');
 //const { dictionary } = require('pdfkit/js/page');
@@ -383,6 +383,38 @@ app.post('/ticket/v1/bought1',(req,res)=>{
   res.json({status:`ok`,email:data.cliente.email})
 })
 
+app.post('/api/v1', (req, res) => {
+  const redsys = new RedsysAPI()
+  
+  const order = '123456789101'
+  const merchantAmount = 945
+  
+  redsys.setParameter('DS_MERCHANT_AMOUNT', merchantAmount);
+  redsys.setParameter('DS_MERCHANT_ORDER', order);
+  redsys.setParameter('DS_MERCHANT_MERCHANTCODE', '351796214');
+  redsys.setParameter('DS_MERCHANT_CURRENCY', '978');
+  redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '0');
+  redsys.setParameter('DS_MERCHANT_TERMINAL', '2');
+  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'https://www.dentralia.com');
+  redsys.setParameter('DS_MERCHANT_URLOK', `https://www.dentralia.com/ok`);
+  redsys.setParameter('DS_MERCHANT_URLKO', 'https://www.dentralia.com/ko');
+
+  const signatureVersion = 'HMAC_SHA256_V1'
+  const key = 'sq7HjrUOBfKmC576ILgskD5srU870gJ7'
+  const params = redsys.createMerchantParameters();
+  const signature = redsys.createMerchantSignature(key);
+  
+  const uriRedsys = 'https://sis-t.redsys.es:25443/sis/realizarPago'
+  // res.write('')
+  res.write(`<form name="from" id="autosubmit" action="${uriRedsys}" method="POST">
+	<input type="hidden" name="Ds_MerchantParameters" value="${params}"/>
+	<input type="hidden" name="Ds_SignatureVersion" value="${signatureVersion}"/>
+	<input type="hidden" name="Ds_Signature" value="${signature}"/>
+  </form><script>document.getElementById('autosubmit').submit()</script>
+  `);
+
+  res.end();
+})
 
 const PORT = process.env.PORT || 4242
 
