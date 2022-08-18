@@ -126,6 +126,8 @@ app.get('/', (req, res, next) => {
   })
 });
 
+
+
 // Cambio de estados de los tickets
 const buyTicket = async(data) =>{
   //console.log('la peticion',data)
@@ -335,7 +337,7 @@ const getPdfQr = async(data) =>{
     doc.text(`Fecha: ${parseDate(dataEvento.unixDateStart)} `+ ` Hora: ${dataEvento.hour}`,50,230,{ align: 'left'});
     doc.text(`Zona: ${tickets[i].zonaName}  Asiento: ${tickets[i].seatInfo}`,50,250,{ align: 'left'});
     
-    doc.text(`Precio: ${pagoTotal.toFixed(2)}€`,50,280,{ align: 'left'});
+    doc.text(`Precio: ${pagoTotal.toFixed(2)}€`+`  Entrada: ${tickets[i].unit}/`+`${tickets[i].total}`,50,280,{ align: 'left'});
     doc.text(`(Entrada: ${tickets[i].zonaPrice}€ + Gastos: ${tickets[i].zonaGDG}€ + Seguro: ${data.seguroPrice}€ )`,50,300,{ align: 'left'});
     const imagenEvent = await fetchImage(dataEvento.webImage);
     doc.image(imagenEvent, 50, 350,{width: 150});
@@ -358,28 +360,27 @@ const getPdfQr = async(data) =>{
 
 }
 
+const addCantTotal = async(data) =>{
+  let tickets=data.carrito
+  let NumObjet0 = Object.keys(tickets)
+  for (var i = 0; i < NumObjet0.length; i++) {  
+    tickets[i].unit = i+1
+    tickets[i].total = NumObjet0.length
+  }
+  //console.log(tickets)
+  data.carrito = tickets
+  getPdfQr(data);
+  buyTicket(data);
+}
 
 
 // endpoint ticket comprado
 app.post('/ticket/v1/bought1',(req,res)=>{
   const data = req.body;
   //console.log('la peticion',data)
-  
-  //getPdfQr(data);
-  buyTicket(data);
+  addCantTotal(data)
+
   res.json({status:`ok`,email:data.cliente.email})
-})
-
-// endpoint de testing
-app.post('/ticket/v1/bought',(req,res)=>{
-  const data = req.body;
-  console.log('Parametros de Compra:',data);
-  
-  //getPdfQr(data);
-  sentTicket(data);
-
-  res.json({Bien:"ok"})
-  //res.send("welcome to vestaZ")
 })
 
 
