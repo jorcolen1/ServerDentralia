@@ -508,6 +508,18 @@ app.post('/api/v1/timer', (req, res) => {
   executeTimer(eventoId, entradasOBJ)
   res.status(200).send('ok')
 })
+
+app.post('/ok', (req, res) => {
+  const body = req.body
+  console.log(body)
+  res.status(200).send('OK')
+})
+
+app.post('/ko', (req,res) => {
+  const body = req.body
+  console.log(body)
+  res.status(403).send('KO')
+})
 const PORT = process.env.PORT || 4242
 
 const server = app.listen(PORT, () => console.log(`Running on port ${PORT}`));
