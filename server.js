@@ -482,9 +482,9 @@ app.post('/api/v1', async (req, res) => {
   redsys.setParameter('DS_MERCHANT_CURRENCY', '978');
   redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '0');
   redsys.setParameter('DS_MERCHANT_TERMINAL', '2');
-  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'https://www.dentralia.com');
-  redsys.setParameter('DS_MERCHANT_URLOK', `https://www.dentralia.com/ok`);
-  redsys.setParameter('DS_MERCHANT_URLKO', 'https://www.dentralia.com/ko');
+  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'http://www.dentralia.com');
+  redsys.setParameter('DS_MERCHANT_URLOK', `http://www.dentralia.com/ok`);
+  redsys.setParameter('DS_MERCHANT_URLKO', 'http://www.dentralia.com/ko');
 
   const signatureVersion = 'HMAC_SHA256_V1'
   const key = 'sq7HjrUOBfKmC576ILgskD5srU870gJ7'
