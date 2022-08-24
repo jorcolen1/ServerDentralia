@@ -559,7 +559,6 @@ app.post('/notification', async (req,res) => {
   .update({
     carrito: transactionsDoc.carrito.map(ticket => ticket.estado = 'Vendido')
   })
-  updateTransaction.forEach((doc) => transactionsDoc = doc.data())
   console.log(transactionsDoc)
   const updateEntradas = transactionsDoc.carrito.forEach(async (obj) => {
     await db
