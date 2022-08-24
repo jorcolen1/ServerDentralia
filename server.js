@@ -21,10 +21,7 @@ const RedsysAPI = require('redsys-api')
 const app = express();
 app.use(express.static('public'));
 app.use(express.json());//servidor entiende datos en formato JSON
-
-const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com';
-const YOUR_DOMAIN1 = 'https://testingserver-vesta.herokuapp.com/Subpages';
-//const YOUR_DOMAIN = 'http://192.168.1.98/';
+app.use(express.urlencoded());//servidor entiende datos de formularios
 
 
 //////0----------------------------------------------------------
@@ -373,7 +370,38 @@ const addCantTotal = async(data) =>{
   buyTicket(data);
 }
 
-
+const executeTimer = (eventoId, entradasOBJ) => {
+  console.log(entradasOBJ)
+  setTimeout(async () => {
+    console.log("Entrando en primer Timer", eventoId)
+    const entradaStatus = await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Entradas').doc(entradasOBJ[0].dbid).get()
+    
+    if (entradaStatus.data().estado === 'Reservado') {
+      entradasOBJ.forEach(async (entrada) => {
+        await db
+      .collection('Eventos').doc(eventoId)
+      .collection('Entradas').doc(entrada.dbid)
+      .update({estado: 'Libre'})
+      })
+    } else if (entradaStatus.data().estado === 'Pendiente') {
+      setTimeout(async () => {
+          const entradaStatus = await db
+        .collection('Eventos').doc(eventoId)
+        .collection('Entradas').doc(entradasOBJ[0].dbid).get()
+        if (entradaStatus.data().estado === 'Pendiente') {
+          entradasOBJ.forEach(async (entrada) => {
+            await db
+          .collection('Eventos').doc(eventoId)
+          .collection('Entradas').doc(entrada.dbid)
+          .update({estado: 'Libre'})
+          })
+        }
+      }, 300000/*300000*/)
+    }
+  }, 600000/*600000*/ )
+}
 // endpoint ticket comprado
 app.post('/ticket/v1/bought1',(req,res)=>{
   const data = req.body;
@@ -383,14 +411,73 @@ app.post('/ticket/v1/bought1',(req,res)=>{
   res.json({status:`ok`,email:data.cliente.email})
 })
 
-app.post('/api/v1', (req, res) => {
+app.post('/api/v1', async (req, res) => {
+  const getOrder = await db.collection('TransaccionesN').doc('Contador').get()
+  const tpvOrder = Number(getOrder.data().Numero)
+  const totalZerosN = 12 - String(tpvOrder).length
+  const newOrder = '0'.repeat(totalZerosN) + String(tpvOrder + 1) 
+  const setOder = await db.collection('TransaccionesN').doc('Contador').set({Numero: newOrder})
   const redsys = new RedsysAPI()
+  const payload = JSON.parse(req.body.payload)
+  const carrito = payload.carrito
+  const totalPrice = payload.totalPrice
+  const unitPrice = payload.unitPrice
+  const seguro = payload.seguro ? payload.seguro: 0
+  const seguroPrice = payload.seguroPrice ? payload.seguroPrice : 0
+  const direccionIP = payload.direccionIP
+  const eventoId = payload.eventoId
+  const quantity = payload.quantity
+  const infoSeats = payload.info
+  const cliente = payload.cliente
+
+  const carritoActualizado = carrito.map(ticket => {
+    ticket.estado = 'Reservado'
+    return ticket
+  })
+  carrito.forEach(async (ticket) => {
+    await db
+          .collection('Eventos').doc(eventoId)
+          .collection('Entradas').doc(ticket.dbid)
+          .update({estado: 'Pendiente'})
+  })
+  const transactionId = await db
+  .collection('Eventos').doc(eventoId)
+  .collection('Transaction').add({
+    carrito: carritoActualizado,
+    cliente: cliente,
+    dateTransaction: Math.floor(new Date().getTime() / 1000),
+    direccionIP: direccionIP,
+    eventoId: eventoId,
+    seguro: seguro,
+    seguroPrice: seguroPrice,
+    sellerId: 'false',
+    statusTransaction: 'Reservado',
+    transactionType: 'Web',
+    tpvOrder: newOrder
+  })
+
+  const setLog = await db.collection('Eventos').doc(eventoId)
+  .collection('Transaction').doc(transactionId.id)
+  .collection('Logs').add({
+    dateUnix: Math.floor(new Date().getTime() / 1000),
+    executorFunction: "server",
+    placeIPBuy: direccionIP,
+    type: 'Pendiente',
+  })
+  const setPendiente = await db.collection('Eventos').doc(eventoId)
+  .collection('Entradas').doc(transactionId.id)
+  .collection('Logs').add({
+    dateUnix: Math.floor(new Date().getTime() / 1000),
+    executorFunction: "server",
+    placeIPBuy: direccionIP,
+    type: 'Pendiente',
+  })
+
+  const formatedPrice = Intl.NumberFormat('es-ES', {style:'currency', currency:'EUR'}).format(totalPrice)
+  const ammount = Number(formatedPrice.replace(/[\,\€]/g, ''))
   
-  const order = '123456789101'
-  const merchantAmount = 945
-  
-  redsys.setParameter('DS_MERCHANT_AMOUNT', merchantAmount);
-  redsys.setParameter('DS_MERCHANT_ORDER', order);
+  redsys.setParameter('DS_MERCHANT_AMOUNT', ammount);
+  redsys.setParameter('DS_MERCHANT_ORDER', newOrder);
   redsys.setParameter('DS_MERCHANT_MERCHANTCODE', '351796214');
   redsys.setParameter('DS_MERCHANT_CURRENCY', '978');
   redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '0');
@@ -405,7 +492,6 @@ app.post('/api/v1', (req, res) => {
   const signature = redsys.createMerchantSignature(key);
   
   const uriRedsys = 'https://sis-t.redsys.es:25443/sis/realizarPago'
-  // res.write('')
   res.write(`<form name="from" id="autosubmit" action="${uriRedsys}" method="POST">
 	<input type="hidden" name="Ds_MerchantParameters" value="${params}"/>
 	<input type="hidden" name="Ds_SignatureVersion" value="${signatureVersion}"/>
@@ -416,10 +502,12 @@ app.post('/api/v1', (req, res) => {
   res.end();
 })
 
+app.post('/api/v1/timer', (req, res) => {
+  const {eventoId, entradasOBJ} = req.body
+  // console.log(req.body)
+  executeTimer(eventoId, entradasOBJ)
+  res.status(200).send('ok')
+})
 const PORT = process.env.PORT || 4242
 
-/*https.createServer({
-  cert:fs.readFileSync('mi_certificado.crt'),
-  key:fs.readFileSync('mi_certificado.key')
-  },app).listen(PORT, () => console.log(`Running on port ${PORT}`));*/
 const server = app.listen(PORT, () => console.log(`Running on port ${PORT}`));
