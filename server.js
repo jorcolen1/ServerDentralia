@@ -371,7 +371,7 @@ const addCantTotal = async(data) =>{
 }
 
 const executeTimer = (eventoId, entradasOBJ) => {
-  console.log(entradasOBJ)
+  console.log("llamando a los timers")
   setTimeout(async () => {
     console.log("Entrando en primer Timer", eventoId)
     const entradaStatus = await db
@@ -379,18 +379,21 @@ const executeTimer = (eventoId, entradasOBJ) => {
     .collection('Entradas').doc(entradasOBJ[0].dbid).get()
     
     if (entradaStatus.data().estado === 'Reservado') {
+      console.log("estado reservado")
       entradasOBJ.forEach(async (entrada) => {
         await db
-      .collection('Eventos').doc(eventoId)
-      .collection('Entradas').doc(entrada.dbid)
-      .update({estado: 'Libre'})
+        .collection('Eventos').doc(eventoId)
+        .collection('Entradas').doc(entrada.dbid)
+        .update({estado: 'Libre'})
       })
     } else if (entradaStatus.data().estado === 'Pendiente') {
+      console.log("estado if pendiente")
       setTimeout(async () => {
-          const entradaStatus = await db
+        const entradaStatus = await db
         .collection('Eventos').doc(eventoId)
         .collection('Entradas').doc(entradasOBJ[0].dbid).get()
         if (entradaStatus.data().estado === 'Pendiente') {
+          console.log("estado pendiente clausula")
           entradasOBJ.forEach(async (entrada) => {
             await db
           .collection('Eventos').doc(eventoId)
@@ -482,7 +485,7 @@ app.post('/api/v1', async (req, res) => {
   redsys.setParameter('DS_MERCHANT_CURRENCY', '978');
   redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '0');
   redsys.setParameter('DS_MERCHANT_TERMINAL', '2');
-  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'http://www.dentralia.com');
+  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'http://www.dentralia.com/notification');
   redsys.setParameter('DS_MERCHANT_URLOK', `http://www.dentralia.com/ok`);
   redsys.setParameter('DS_MERCHANT_URLKO', 'http://www.dentralia.com/ko');
 
@@ -516,6 +519,11 @@ app.post('/ok', (req, res) => {
 })
 
 app.post('/ko', (req,res) => {
+  const body = req.body
+  console.log(body)
+  res.status(403).send('KO')
+})
+app.post('/notification', (req,res) => {
   const body = req.body
   console.log(body)
   res.status(403).send('KO')
