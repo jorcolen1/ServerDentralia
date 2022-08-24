@@ -541,7 +541,10 @@ app.post('/notification', async (req,res) => {
 
   const decodedParams = redsys.decodeMerchantParameters(Ds_MerchantParameters)
   const orderTPV = decodedParams.Ds_Order
-
+  if (Number(decodedParams.Ds_Response) > 100) {
+    console.log(decodedParams)
+    res.status(203).send('Fail')
+  }
   const getId = await db.collection('TransactionTPV').doc(orderTPV).get()
   const eventoId = getId.data().eventoId
 
