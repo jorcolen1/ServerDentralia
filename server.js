@@ -524,9 +524,14 @@ app.post('/ko', (req,res) => {
   res.status(403).send('KO')
 })
 app.post('/notification', (req,res) => {
-  const body = req.body
-  console.log(body)
-  res.status(403).send('KO')
+  const {
+    Ds_SignaruteVersion,
+    Ds_MerchantParameters,
+    Ds_Signature } = req.body
+  const redsys = new RedsysAPI()
+  const decodedParams = redsys.decodeMerchantParameters(Ds_MerchantParameters)
+  console.log(decodedParams)
+  res.status(403).send(decodedParams)
 })
 const PORT = process.env.PORT || 4242
 
