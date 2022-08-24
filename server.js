@@ -548,7 +548,7 @@ app.post('/notification', async (req,res) => {
   const getTransaction = await db
   .collection('Eventos').doc(eventoId)
   .collection('Transaction').where('tpvOrder', '==', orderTPV).get()
-  updateTransaction.forEach((doc) => {
+  getTransaction.forEach((doc) => {
     transactionsDoc = doc.data()
     transactionsDoc.id = doc.id
   })
