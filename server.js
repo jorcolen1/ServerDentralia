@@ -467,6 +467,13 @@ app.post('/api/v1', async (req, res) => {
     placeIPBuy: direccionIP,
     type: 'Pendiente',
   })
+  const transactionTPV = await db
+  .collection('TransactionTPV')
+  .doc(newOrder).set({
+    eventoId: eventoId,
+    orderTPV: newOrder,
+    unixDate: Math.floor(new Date().getTime() / 1000)
+  })
   const setPendiente = await db.collection('Eventos').doc(eventoId)
   .collection('Entradas').doc(transactionId.id)
   .collection('Logs').add({
@@ -482,6 +489,7 @@ app.post('/api/v1', async (req, res) => {
   redsys.setParameter('DS_MERCHANT_AMOUNT', ammount);
   redsys.setParameter('DS_MERCHANT_ORDER', newOrder);
   redsys.setParameter('DS_MERCHANT_MERCHANTCODE', '351796214');
+  redsys.setParameter('DS_MERCHANT_PRODUCTDESCRIPTION', `Evento ID: ${eventoId}, Entradas: ${quantity}, Asientos: ${infoSeats}`);
   redsys.setParameter('DS_MERCHANT_CURRENCY', '978');
   redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '0');
   redsys.setParameter('DS_MERCHANT_TERMINAL', '2');
@@ -523,13 +531,45 @@ app.post('/ko', (req,res) => {
   console.log(body)
   res.status(403).send('KO')
 })
-app.post('/notification', (req,res) => {
+app.post('/notification', async (req,res) => {
+  let transactionsDoc = {}
+  const redsys = new RedsysAPI()
   const {
     Ds_SignaruteVersion,
     Ds_MerchantParameters,
     Ds_Signature } = req.body
-  const redsys = new RedsysAPI()
+
   const decodedParams = redsys.decodeMerchantParameters(Ds_MerchantParameters)
+  const orderTPV = decodedParams.Ds_Order
+
+  const getId = await db.collection('TransactionTPV').doc(orderTPV).get()
+  const eventoId = getId.data().eventoId
+
+  const getTransaction = await db
+  .collection('Eventos').doc(eventoId)
+  .collection('Transaction').where('tpvOrder', '==', orderTPV).get()
+  updateTransaction.forEach((doc) => {
+    transactionsDoc = doc.data()
+    transactionsDoc.id = doc.id
+  })
+
+  const updateTransaction = await db
+  .collection('Eventos').doc(eventoId)
+  .collection('Transaction').doc(transactionsDoc.id)
+  .update({
+    carrito: transactionsDoc.carrito.map(ticket => ticket.estado = 'Vendido')
+  })
+  updateTransaction.forEach((doc) => transactionsDoc = doc.data())
+  console.log(transactionsDoc)
+  const updateEntradas = transactionsDoc.carrito.forEach(async (obj) => {
+    await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Entradas').doc(obj.dbid)
+    .update({
+      estado: 'Vendido'
+    })
+  })
+
   console.log(decodedParams)
   res.status(403).send(decodedParams)
 })
