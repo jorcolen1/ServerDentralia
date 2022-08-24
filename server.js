@@ -544,36 +544,37 @@ app.post('/notification', async (req,res) => {
   if (Number(decodedParams.Ds_Response) > 100) {
     console.log(decodedParams)
     res.status(203).send('Fail')
-  }
-  const getId = await db.collection('TransactionTPV').doc(orderTPV).get()
-  const eventoId = getId.data().eventoId
+  } else {
+    const getId = await db.collection('TransactionTPV').doc(orderTPV).get()
+    const eventoId = getId.data().eventoId
 
-  const getTransaction = await db
-  .collection('Eventos').doc(eventoId)
-  .collection('Transaction').where('tpvOrder', '==', orderTPV).get()
-  getTransaction.forEach((doc) => {
-    transactionsDoc = doc.data()
-    transactionsDoc.id = doc.id
-  })
-
-  const updateTransaction = await db
-  .collection('Eventos').doc(eventoId)
-  .collection('Transaction').doc(transactionsDoc.id)
-  .update({
-    carrito: transactionsDoc.carrito.map(ticket => ticket.estado = 'Vendido')
-  })
-  console.log(transactionsDoc)
-  const updateEntradas = transactionsDoc.carrito.forEach(async (obj) => {
-    await db
+    const getTransaction = await db
     .collection('Eventos').doc(eventoId)
-    .collection('Entradas').doc(obj.dbid)
-    .update({
-      estado: 'Vendido'
+    .collection('Transaction').where('tpvOrder', '==', orderTPV).get()
+    getTransaction.forEach((doc) => {
+      transactionsDoc = doc.data()
+      transactionsDoc.id = doc.id
     })
-  })
 
-  console.log(decodedParams)
-  res.status(403).send(decodedParams)
+    const updateTransaction = await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Transaction').doc(transactionsDoc.id)
+    .update({
+      carrito: transactionsDoc.carrito.map(ticket => ticket.estado = 'Vendido')
+    })
+    console.log(transactionsDoc)
+    const updateEntradas = transactionsDoc.carrito.forEach(async (obj) => {
+      await db
+      .collection('Eventos').doc(eventoId)
+      .collection('Entradas').doc(obj.dbid)
+      .update({
+        estado: 'Vendido'
+      })
+    })
+
+    console.log(decodedParams)
+    res.status(403).send(decodedParams)
+  }
 })
 const PORT = process.env.PORT || 4242
 
