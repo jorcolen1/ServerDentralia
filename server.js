@@ -253,9 +253,10 @@ const sentTicket = async(data) =>{
   transporter.use('compile', hbs(handlebarOptions))
 
   var mailOptions = {
-    from:"'noreply'<dentraliagestion@gmail.com>", // sender address
+    from:"Dentralia <dentraliagestion@gmail.com>", // sender address
     to:data.cliente.email,//req.body.email , // list of receivers
-    subject: ` Aquí tienes tus entradas ${data.cliente.fullName}, de ${dataEvento.name} en ${dataRecinto.province}`,
+    // subject: ` Aquí tienes tus entradas ${data.cliente.fullName}, de ${dataEvento.name} en ${dataRecinto.province}`,
+    subject: `¡Gracias por tu compra!`,
     template: 'email', // the name of the template file i.e email.handlebars
     bcc: 'dentraliagestion@gmail.com',
     attachments: [{ filename: "output.pdf", path: "./views/images/output.pdf" }],
