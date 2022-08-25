@@ -446,7 +446,7 @@ app.post('/api/v1', async (req, res) => {
   })
   const transactionId = await db
   .collection('Eventos').doc(eventoId)
-  .collection('Transaction').add({
+  .collection('Transactions').add({
     carrito: carritoActualizado,
     cliente: cliente,
     dateTransaction: Math.floor(new Date().getTime() / 1000),
@@ -461,7 +461,7 @@ app.post('/api/v1', async (req, res) => {
   })
 
   const setLog = await db.collection('Eventos').doc(eventoId)
-  .collection('Transaction').doc(transactionId.id)
+  .collection('Transactions').doc(transactionId.id)
   .collection('Logs').add({
     dateUnix: Math.floor(new Date().getTime() / 1000),
     executorFunction: "server",
@@ -552,26 +552,35 @@ app.post('/notification', async (req,res) => {
 
     const getTransaction = await db
     .collection('Eventos').doc(eventoId)
-    .collection('Transaction').where('tpvOrder', '==', orderTPV).get()
+    .collection('Transactions').where('tpvOrder', '==', orderTPV).get()
     getTransaction.forEach((doc) => {
       transactionsDoc = doc.data()
       transactionsDoc.id = doc.id
       clientData = doc.data().cliente
     })
+    console.log(transactionsDoc)
     addCantTotal(transactionsDoc)
     const updateTransaction = await db
     .collection('Eventos').doc(eventoId)
-    .collection('Transaction').doc(transactionsDoc.id)
+    .collection('Transactions').doc(transactionsDoc.id)
     .update({
       carrito: transactionsDoc.carrito.map(ticket => ticket.estado = 'Vendido')
     })
-    console.log(transactionsDoc)
+    const setVendido = await db.collection('Eventos').doc(eventoId)
+    .collection('Transactions').doc(transactionsDoc.id)
+    .collection('Logs').add({
+      dateUnix: Math.floor(new Date().getTime() / 1000),
+      executorFunction: 'RedSys',
+      placeIPBuy: transactionsDoc.direccionIP,
+      type: 'Vendido'
+    })
     const updateEntradas = transactionsDoc.carrito.forEach(async (obj) => {
       await db
       .collection('Eventos').doc(eventoId)
       .collection('Entradas').doc(obj.dbid)
       .update({
-        estado: 'Vendido'
+        estado: 'Vendido',
+        tpvOrder: decodedParams.Ds_Order,
       })
     })
 
@@ -579,6 +588,34 @@ app.post('/notification', async (req,res) => {
     res.status(403).send(decodedParams)
   }
 })
+
+app.post('/api/v1/devolution', (req, res) => {
+  const redsys = new RedsysAPI()
+  const payload = JSON.parse(req.body.payload)
+  const carrito = payload.carrito
+  const totalPrice = payload.totalPrice
+  const unitPrice = payload.unitPrice
+  const seguro = payload.seguro ? payload.seguro: 0
+  const seguroPrice = payload.seguroPrice ? payload.seguroPrice : 0
+  const direccionIP = payload.direccionIP
+  const eventoId = payload.eventoId
+  const quantity = payload.quantity
+  const infoSeats = payload.info
+  const cliente = payload.cliente
+
+  redsys.setParameter('DS_MERCHANT_AMOUNT', ammount);
+  redsys.setParameter('DS_MERCHANT_ORDER', newOrder);
+  redsys.setParameter('DS_MERCHANT_MERCHANTCODE', '351796214');
+  redsys.setParameter('DS_MERCHANT_PRODUCTDESCRIPTION', `Evento ID: ${eventoId}, Entradas: ${quantity}, Asientos: ${infoSeats}`);
+  redsys.setParameter('DS_MERCHANT_CURRENCY', '978');
+  redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '3');
+  redsys.setParameter('DS_MERCHANT_TERMINAL', '2');
+  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'http://www.dentralia.com/notification');
+  redsys.setParameter('DS_MERCHANT_URLOK', `http://www.dentralia.com/ok`);
+  redsys.setParameter('DS_MERCHANT_URLKO', 'http://www.dentralia.com/ko');
+
+})
+
 const PORT = process.env.PORT || 4242
 
 const server = app.listen(PORT, () => console.log(`Running on port ${PORT}`));
