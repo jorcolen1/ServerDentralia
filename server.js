@@ -533,6 +533,7 @@ app.post('/ko', (req,res) => {
 })
 app.post('/notification', async (req,res) => {
   let transactionsDoc = {}
+  let clientData = {}
   const redsys = new RedsysAPI()
   const {
     Ds_SignaruteVersion,
@@ -554,8 +555,9 @@ app.post('/notification', async (req,res) => {
     getTransaction.forEach((doc) => {
       transactionsDoc = doc.data()
       transactionsDoc.id = doc.id
+      clientData = doc.data().cliente
     })
-
+    addCantTotal(transactionsDoc)
     const updateTransaction = await db
     .collection('Eventos').doc(eventoId)
     .collection('Transaction').doc(transactionsDoc.id)
