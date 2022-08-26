@@ -279,9 +279,78 @@ const sentTicket = async(data) =>{
   });
 }
 
+const sentDevolution = async(data) =>{
+  // InitialDate
+    // traer datos del Evento
+    const EventoRef = db.collection('Eventos').doc(data.eventoId);
+    const Evento = await EventoRef.get();
+    if (!Evento.exists) {
+      console.log('No such document!');
+    } else {
+      dataEvento=Evento.data();
+    }
+    //console.log('Evento data:', dataEvento);
+  
+    const RecintoRef = db.collection('Recintos').doc(dataEvento.recintoId);
+    const Recinto = await RecintoRef.get();
+    if (!Recinto.exists) {
+      console.log('No such document!');
+    } else {
+      dataRecinto=Recinto.data();
+    }
+    //console.log('Recinto data:', dataRecinto);
+  
+  // initialize nodemailer
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtps
+    port:465,//587,
+    segure: true,//par no ssl
+    auth:{
+      user:'dentraliagestion@gmail.com',
+      pass:'plafzsxeziqytyur'
+    },
+  });
+
+  // point to the template folder
+  const handlebarOptions = {
+    viewEngine: {
+        partialsDir: path.resolve('./views/'),
+        defaultLayout: false,
+    },
+    viewPath: path.resolve('./views/'),
+  };
+
+  // use a template file with nodemailer
+  transporter.use('compile', hbs(handlebarOptions))
+
+  var mailOptions = {
+    from:"Dentralia <dentraliagestion@gmail.com>", // sender address
+    to:data.cliente.email,//req.body.email , // list of receivers
+    // subject: ` Aquí tienes tus entradas ${data.cliente.fullName}, de ${dataEvento.name} en ${dataRecinto.province}`,
+    subject: `¡Devolucion exitosa!`,
+    template: 'email', // the name of the template file i.e email.handlebars
+    bcc: 'dentraliagestion@gmail.com',
+    context:{
+        name: data.cliente.fullName, // replace {{name}} 
+        nameEvento: dataEvento.name, // replace {{name}} 
+        city: dataRecinto.province, // replace {{email}}
+        date: parseDate(dataEvento.unixDateStart),
+        hour: dataEvento.hour ,
+        email:data.cliente.email
+    }
+  };
+
+  // trigger the sending of the E-mail
+  transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+        return console.log(error);
+    }
+    console.log('2.Message sent: ' + info.response);
+  });
+}
+
 //conseguir el QR e Insertarlo en el PDF
 const getPdfQr = async(data) =>{
-
   let tickets=data.carrito
   let dataEvento='';
   let dataRecinto='';
@@ -311,7 +380,7 @@ const getPdfQr = async(data) =>{
   data.seguro ? "":data.seguroPrice="0.00" ;
 
   for (var i = 0; i < NumObjet0.length; i++) {
-    //console.log('longituddddd---->>',tickets[i].dbstring)
+    console.log('longituddddd---->>',tickets[i].dbstring)
     try {
       await QRCode.toFile(`./views/images/imgQR${i}.jpg`,tickets[i].dbstring);
     } catch (err) {
@@ -356,6 +425,86 @@ const getPdfQr = async(data) =>{
   console.log('1. se genera el QR y el PDF')
   sentTicket(data);
 
+}
+
+//conseguir el QR e Insertarlo en el PDF Para descargar
+const downloadPdfQr = async(data) =>{
+  let tickets=data.carrito
+  let dataEvento='';
+  let dataRecinto='';
+  const doc = new PDFDocument({autoFirstPage: false});
+  doc.pipe(fs.createWriteStream('./views/images/output.pdf'));
+  
+  // traer datos del Evento
+  const EventoRef = db.collection('Eventos').doc(data.eventoId);
+  const Evento = await EventoRef.get();
+  if (!Evento.exists) {
+    console.log('No such document!');
+  } else {
+    dataEvento=Evento.data();
+  }
+  //console.log('Evento data:', dataEvento);
+
+  const RecintoRef = db.collection('Recintos').doc(dataEvento.recintoId);
+  const Recinto = await RecintoRef.get();
+  if (!Recinto.exists) {
+    console.log('No such document!');
+  } else {
+    dataRecinto=Recinto.data();
+  }
+  //console.log('Recinto data:', dataRecinto);
+
+  let NumObjet0 = Object.keys(tickets);
+  data.seguro ? "":data.seguroPrice="0.00" ;
+
+  for (var i = 0; i < NumObjet0.length; i++) {
+    console.log('longituddddd---->>',tickets[i].dbstring)
+    try {
+      await QRCode.toFile(`./views/images/imgQR${i}.jpg`,tickets[i].dbstring);
+    } catch (err) {
+      console.error('al generar el QR-->',err)
+    }
+
+    console.log("Data1 ----->",dataEvento)
+    console.log("Data2 _____>",dataRecinto)
+    console.log("Data3 =====>",tickets)
+
+    let pagoTotal=parseFloat((tickets[i].zonaPrice),10)+
+                  parseFloat((tickets[i].zonaGDG),10)+
+                  parseFloat((data.seguroPrice),10);
+
+    doc.addPage()
+    doc.image('views/images/logo.png', 50, 50, {width: 100});
+    doc.image(`./views/images/imgQR${i}.jpg`, 430, 220, {width: 100});
+    doc.fontSize(5).text(tickets[i].dbstring,440,315);
+    doc.fontSize(20).text(dataEvento.name+'-'+dataRecinto.province,50,130,{ align: 'left'});
+    doc.fontSize(18).text(dataRecinto.name,50,150,{ align: 'left'});
+    doc.fontSize(14).text(dataRecinto.address,50,170,{ align: 'left'});
+    doc.text(dataRecinto.location,50,190,{ align: 'left'});
+
+    doc.text(`Fecha: ${parseDate(dataEvento.unixDateStart)} `+ ` Hora: ${dataEvento.hour}`,50,230,{ align: 'left'});
+    doc.text(`Zona: ${tickets[i].zonaName}  Asiento: ${tickets[i].seatInfo}`,50,250,{ align: 'left'});
+    
+    doc.text(`Precio: ${pagoTotal.toFixed(2)}€`+`  Entrada: ${tickets[i].unit}/`+`${tickets[i].total}`,50,280,{ align: 'left'});
+    doc.text(`(Entrada: ${tickets[i].zonaPrice}€ + Gastos: ${tickets[i].zonaGDG}€ + Seguro: ${data.seguroPrice}€ )`,50,300,{ align: 'left'});
+    const imagenEvent = await fetchImage(dataEvento.webImage);
+    doc.image(imagenEvent, 50, 350,{width: 150});
+    doc.fontSize(8).text(`1) Es obligatorio para todos los asistentes llevar consigo el DNI. 2) Está reservado el derecho de admisión(Ley 17/97). 3)El horario de inicio y de apertura de puertas podrán sufrir cambios para cumplir con la normativa vigente en relación al Covid-19. 4) No se aceptaran cambios ni devoluciones. 5) La localidad adquirida da derecho a asistir al evento que corresponde y en la butaca/zona asignada. La suspension de dicho evento lleva consigo exclusivamente la devolucion del importe de la entrada(excluidos los gastos de gestión). 6) Es potestad de la organización permitir la entrada al recinto una vez comenzado el evento. 7) En caso de suspensión del evento, la organización se compromete a la devolución del importe de la entrada en el plazo máximo de 15 días hábiles a partir de la fecha del anuncio de la suspensión. 8) No será objeto de devolución aquellos supuestos en los que la suspensión o modificación se produjera una vez comenzado el evento o actividad recreativa y fuera por causa de fuerza mayor. Las malas condiciones climatológicas no dan derecho a devolución de la entrada. 9) Los menores de edad que tengan entre 0 y 13 años, ambos inclusive, podrán acceder al concierto acompañados por su padre/madre/tutor legal y presentar esta autorización correspondiente en el acceso al recinto. Los menores de edad que tengan entre 14 y 15 años, ambos inclusive, podrán acceder al concierto y presentando la autorización firmada por su padre/madre/tutor legal. 10) Cualquier entrada rota o con indicios de falsificación autorizará al organizador a privar a su portador del acceso al evento. 11) La organización del evento no se hace responsable de las entradas robadas. 12) Queda prohibido el acceso al recinto con cámara de foto y/o video (sea doméstica o profesional).Queda prohibido la utilización del flash para la realización de fotos con móviles. El incumplimiento de esta norma puede acarrear la expulsión del recinto sin derecho a devolución del importe de la entrada. 13) Queda prohibido introducir alcohol, sustancias ilegales, armas u objetos peligrosos. 14) Queda limitada la entrada y/o permanencia en el evento a toda persona que se encuentre en estado de embriaguez. 15) Todo asistente podrá ser sometido a un registro por el equipo de seguridad en el acceso al evento, siguiendo la normativa de Ley de Espectáculos Públicos y Seguridad Privada. 16) Salvo que se indique lo contrario a través de cartel informativo en el recinto, no está permitida la entrada de comida ni bebida del exterior salvo botella de agua pequeña (33cl) a la que se le quitará el tapón en el control de acceso.`
+    ,50,500,{ align: 'justify'});
+  }
+  doc.end();
+  //console.log('pdfCreado')
+
+  try {
+    for (var i = 0; i < NumObjet0.length; i++) {
+      fs.unlinkSync(`./views/images/imgQR${i}.jpg`)
+      console.log('QR removed')
+    }
+  } catch(err) {
+    console.error('Something wrong happened removing the QR', err)
+  }
+  console.log('1. se genera el QR y el PDF')
+  return true
 }
 
 const addCantTotal = async(data) =>{
@@ -546,6 +695,19 @@ app.post('/notification', async (req,res) => {
   if (Number(decodedParams.Ds_Response) > 100) {
     console.log(decodedParams)
     res.status(203).send('Fail')
+  } else if (decodedParams.Ds_Response == '0900') {
+    console.log("OK!!!!!!")
+    const getId = await db.collection('TransactionTPV').doc(orderTPV).get()
+    const eventoId = getId.data().eventoId
+    const getTransaction = await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Transactions').where('tpvOrder', '==', orderTPV).get()
+    getTransaction.forEach((doc) => {
+      transactionsDoc = doc.data()
+      transactionsDoc.id = doc.id
+      clientData = doc.data().cliente
+    })
+    sentDevolution(transactionsDoc)
   } else {
     const getId = await db.collection('TransactionTPV').doc(orderTPV).get()
     const eventoId = getId.data().eventoId
@@ -558,7 +720,6 @@ app.post('/notification', async (req,res) => {
       transactionsDoc.id = doc.id
       clientData = doc.data().cliente
     })
-    console.log(transactionsDoc)
     addCantTotal(transactionsDoc)
     const updateTransaction = await db
     .collection('Eventos').doc(eventoId)
@@ -581,6 +742,7 @@ app.post('/notification', async (req,res) => {
       .update({
         estado: 'Vendido',
         tpvOrder: decodedParams.Ds_Order,
+        price: decodedParams.Ds_Amount
       })
     })
 
@@ -591,22 +753,18 @@ app.post('/notification', async (req,res) => {
 
 app.post('/api/v1/devolution', (req, res) => {
   const redsys = new RedsysAPI()
-  const payload = JSON.parse(req.body.payload)
-  const carrito = payload.carrito
-  const totalPrice = payload.totalPrice
-  const unitPrice = payload.unitPrice
-  const seguro = payload.seguro ? payload.seguro: 0
-  const seguroPrice = payload.seguroPrice ? payload.seguroPrice : 0
-  const direccionIP = payload.direccionIP
+  const payload = req.body
+  const tpvOrderDB = payload.tpvOrder
+  const amountDB = payload.price
+  
   const eventoId = payload.eventoId
   const quantity = payload.quantity
   const infoSeats = payload.info
   const cliente = payload.cliente
 
-  redsys.setParameter('DS_MERCHANT_AMOUNT', ammount);
-  redsys.setParameter('DS_MERCHANT_ORDER', newOrder);
+  redsys.setParameter('DS_MERCHANT_AMOUNT', amountDB);
+  redsys.setParameter('DS_MERCHANT_ORDER', tpvOrderDB);
   redsys.setParameter('DS_MERCHANT_MERCHANTCODE', '351796214');
-  redsys.setParameter('DS_MERCHANT_PRODUCTDESCRIPTION', `Evento ID: ${eventoId}, Entradas: ${quantity}, Asientos: ${infoSeats}`);
   redsys.setParameter('DS_MERCHANT_CURRENCY', '978');
   redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '3');
   redsys.setParameter('DS_MERCHANT_TERMINAL', '2');
@@ -614,8 +772,89 @@ app.post('/api/v1/devolution', (req, res) => {
   redsys.setParameter('DS_MERCHANT_URLOK', `http://www.dentralia.com/ok`);
   redsys.setParameter('DS_MERCHANT_URLKO', 'http://www.dentralia.com/ko');
 
+  const signatureVersion = 'HMAC_SHA256_V1'
+  const key = 'sq7HjrUOBfKmC576ILgskD5srU870gJ7'
+  const params = redsys.createMerchantParameters();
+  const signature = redsys.createMerchantSignature(key);
+  console.log(params)
+  console.log(signature)
+  const uriRedsys = 'https://sis-t.redsys.es:25443/sis/realizarPago'
+  // fetch(uriRedsys, {
+  //   method: 'POST',
+  //   headers: {
+  //     'Content-Type': 'application/x-www-form-urlencoded'
+  //   },
+  //   body: {
+  //     signature: signature,
+  //     Ds_MerchantParameters: params,
+  //     signatureVersion: signatureVersion
+  //   }
+  // })
+  // .then(res => res)
+  // .then(data => console.log(data.body))
+
+  res.status(201).send(JSON.stringify({result: 'Enviado OK'}))
 })
 
+app.post('/api/v1/resendTicket', async (req, res) => {
+  let transactionsDoc = {}
+  const { eventoId, tpvOrder } = req.body
+  const getTransaction = await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Transactions').where('tpvOrder', '==', tpvOrder).get()
+    getTransaction.forEach((doc) => {
+      transactionsDoc = doc.data()
+      transactionsDoc.id = doc.id
+    })
+    let tickets= transactionsDoc.carrito
+    console.log(transactionsDoc)
+    let NumObjet0 = Object.keys(tickets)
+  for (var i = 0; i < NumObjet0.length; i++) {  
+    tickets[i].unit = i+1
+    tickets[i].total = NumObjet0.length
+  }
+  transactionsDoc.carrito = tickets
+  // console.log(transactionsDoc)
+  getPdfQr(transactionsDoc);
+  res.status(200).send("Correo enviado")
+})
+
+app.post('/api/v1/downloadTicket', async (req, res) => {
+  const params = req.body
+  let ticketInfo = ''
+  const retrieveData = await db
+  .collection('Eventos').doc(params.eventoId)
+  .collection('Transactions').where('tpvOrder', '==', params.tpvOrder).get()
+  retrieveData.forEach(async (query) => {
+    ticketInfo = query.data()
+    console.log("Entrando en ticketInfo")
+    const generatePDF = await downloadPdfQr(ticketInfo)
+    const file = `${__dirname}/views/images/output.pdf`
+    res.download(file, (err) => {
+      if(err) {
+        console.log(err)
+      }
+    })
+  })
+})
+
+app.post('/testDevolution', async (req, res) => {
+  let clientData = ''
+  let transactionsDoc = ''
+  const orderTPV = req.body.orderTPV
+  const getId = await db.collection('TransactionTPV').doc(orderTPV).get()
+    const eventoId = getId.data().eventoId
+    const getTransaction = await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Transactions').where('tpvOrder', '==', orderTPV).get()
+    getTransaction.forEach((doc) => {
+      transactionsDoc = doc.data()
+      transactionsDoc.id = doc.id
+      clientData = doc.data().cliente
+    })
+    sentDevolution(transactionsDoc)
+  res.status(200).send("OK!")
+})
 const PORT = process.env.PORT || 4242
 
 const server = app.listen(PORT, () => console.log(`Running on port ${PORT}`));

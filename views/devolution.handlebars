@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Welcome Email</title>
+   <!--Custom Css-->
+
+    <style>
+      *{
+    box-sizing: border-box;/*espacion inter and exter*/
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    background: #ffffff;
+    overflow-x: hidden;
+    }
+
+  .logoIcon{
+    width: 230px;/*hacer pequemas imagenes*/
+    filter: brightness(150%);
+    background-color: black; 
+  }
+  .container{
+    width: 100%;
+     
+    max-width: 1250px;
+    margin: 0 10;
+    padding: 0;
+  }
+  .text-center{
+    text-align: center;
+    color: #000000;
+  }
+     
+    </style>
+</head>
+<body>
+  <div class="continer" >
+    <div>
+      <img  class="logoIcon" src="https://mgt-media.fra1.cdn.digitaloceanspaces.com/varios/festentradas-logo.png" >
+    </div>
+
+    <div class="">
+        <br>
+        <br>
+        <h2 class="text-left">Hemos realizado una devolucion! </h2>
+        <br>
+        <p class="card-left text-left">Estimado/a {{name}},</p>
+        <p class="text-left">Se ha solicitado exitosamente la devolucion de tu(s) entrada(s) para {{nameEvento}} - ({{city}}) el día {{date}} a las {{hour}}.</p>
+        <p class="text-justify">Se han enviado a {{email}}.</p>
+       <!-- <img src="./public/img/vesta_empresa.png" class="mx-auto d-block" width="250" height="200" >-->
+       <br>
+       <br>
+       <p class="text-center">¡Esperamos que lo disfrutes!</p>
+
+       <p class="text-justify"> Recuerda que no se admitirá más de una copia de la entrada y sólo la primera que sea validada será aceptada.
+                    La organización se reserva el derecho a solicitar la documentación que considere necesaria para acceder al recinto.
+                    Si deseas más información o tienes cualquier duda contáctanos en <a href="http://www.dentralia.com/" >www.dentralia.com</a></p>
+    </div>
+  </div>
+</body>
+</html>
