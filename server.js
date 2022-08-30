@@ -1,5 +1,4 @@
 // This is your test secret API key.
-const stripe = require('stripe')('sk_test_51KDsabCEfvUCezSL48udO57i0YcetQIW8fhmJDv7CmFccF1B0ZfOjgqUmJQHh8KKU1KANxzKa4MMFQiNxhZO8MWg00pJMhTfjX');
 const express = require('express');
 const cors = require('cors')
 const hbs = require('nodemailer-express-handlebars')
