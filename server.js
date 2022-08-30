@@ -13,6 +13,7 @@ const https = require('https');
 const PDFDocument = require('pdfkit');
 var QRCode = require('qrcode')
 const fetch = require('node-fetch');
+const RedsysAPI = require('redsys-api')
 
 //var html_to_pdf = require('html-pdf-node');
 //const { dictionary } = require('pdfkit/js/page');
@@ -20,10 +21,7 @@ const fetch = require('node-fetch');
 const app = express();
 app.use(express.static('public'));
 app.use(express.json());//servidor entiende datos en formato JSON
-
-const YOUR_DOMAIN = 'https://testingserver-vesta.herokuapp.com';
-const YOUR_DOMAIN1 = 'https://testingserver-vesta.herokuapp.com/Subpages';
-//const YOUR_DOMAIN = 'http://192.168.1.98/';
+app.use(express.urlencoded());//servidor entiende datos de formularios
 
 
 //////0----------------------------------------------------------
@@ -255,9 +253,10 @@ const sentTicket = async(data) =>{
   transporter.use('compile', hbs(handlebarOptions))
 
   var mailOptions = {
-    from:"'noreply'<dentraliagestion@gmail.com>", // sender address
+    from:"Dentralia <dentraliagestion@gmail.com>", // sender address
     to:data.cliente.email,//req.body.email , // list of receivers
-    subject: ` Aquí tienes tus entradas ${data.cliente.fullName}, de ${dataEvento.name} en ${dataRecinto.province}`,
+    // subject: ` Aquí tienes tus entradas ${data.cliente.fullName}, de ${dataEvento.name} en ${dataRecinto.province}`,
+    subject: `¡Gracias por tu compra!`,
     template: 'email', // the name of the template file i.e email.handlebars
     bcc: 'dentraliagestion@gmail.com',
     attachments: [{ filename: "output.pdf", path: "./views/images/output.pdf" }],
@@ -280,9 +279,78 @@ const sentTicket = async(data) =>{
   });
 }
 
+const sentDevolution = async(data) =>{
+  // InitialDate
+    // traer datos del Evento
+    const EventoRef = db.collection('Eventos').doc(data.eventoId);
+    const Evento = await EventoRef.get();
+    if (!Evento.exists) {
+      console.log('No such document!');
+    } else {
+      dataEvento=Evento.data();
+    }
+    //console.log('Evento data:', dataEvento);
+  
+    const RecintoRef = db.collection('Recintos').doc(dataEvento.recintoId);
+    const Recinto = await RecintoRef.get();
+    if (!Recinto.exists) {
+      console.log('No such document!');
+    } else {
+      dataRecinto=Recinto.data();
+    }
+    //console.log('Recinto data:', dataRecinto);
+  
+  // initialize nodemailer
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',//'smtp.ethereal.email',//servidor smtps
+    port:465,//587,
+    segure: true,//par no ssl
+    auth:{
+      user:'dentraliagestion@gmail.com',
+      pass:'plafzsxeziqytyur'
+    },
+  });
+
+  // point to the template folder
+  const handlebarOptions = {
+    viewEngine: {
+        partialsDir: path.resolve('./views/'),
+        defaultLayout: false,
+    },
+    viewPath: path.resolve('./views/'),
+  };
+
+  // use a template file with nodemailer
+  transporter.use('compile', hbs(handlebarOptions))
+
+  var mailOptions = {
+    from:"Dentralia <dentraliagestion@gmail.com>", // sender address
+    to:data.cliente.email,//req.body.email , // list of receivers
+    // subject: ` Aquí tienes tus entradas ${data.cliente.fullName}, de ${dataEvento.name} en ${dataRecinto.province}`,
+    subject: `¡Devolucion exitosa!`,
+    template: 'email', // the name of the template file i.e email.handlebars
+    bcc: 'dentraliagestion@gmail.com',
+    context:{
+        name: data.cliente.fullName, // replace {{name}} 
+        nameEvento: dataEvento.name, // replace {{name}} 
+        city: dataRecinto.province, // replace {{email}}
+        date: parseDate(dataEvento.unixDateStart),
+        hour: dataEvento.hour ,
+        email:data.cliente.email
+    }
+  };
+
+  // trigger the sending of the E-mail
+  transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+        return console.log(error);
+    }
+    console.log('2.Message sent: ' + info.response);
+  });
+}
+
 //conseguir el QR e Insertarlo en el PDF
 const getPdfQr = async(data) =>{
-
   let tickets=data.carrito
   let dataEvento='';
   let dataRecinto='';
@@ -312,7 +380,7 @@ const getPdfQr = async(data) =>{
   data.seguro ? "":data.seguroPrice="0.00" ;
 
   for (var i = 0; i < NumObjet0.length; i++) {
-    //console.log('longituddddd---->>',tickets[i].dbstring)
+    console.log('longituddddd---->>',tickets[i].dbstring)
     try {
       await QRCode.toFile(`./views/images/imgQR${i}.jpg`,tickets[i].dbstring);
     } catch (err) {
@@ -359,6 +427,86 @@ const getPdfQr = async(data) =>{
 
 }
 
+//conseguir el QR e Insertarlo en el PDF Para descargar
+const downloadPdfQr = async(data) =>{
+  let tickets=data.carrito
+  let dataEvento='';
+  let dataRecinto='';
+  const doc = new PDFDocument({autoFirstPage: false});
+  doc.pipe(fs.createWriteStream('./views/images/output.pdf'));
+  
+  // traer datos del Evento
+  const EventoRef = db.collection('Eventos').doc(data.eventoId);
+  const Evento = await EventoRef.get();
+  if (!Evento.exists) {
+    console.log('No such document!');
+  } else {
+    dataEvento=Evento.data();
+  }
+  //console.log('Evento data:', dataEvento);
+
+  const RecintoRef = db.collection('Recintos').doc(dataEvento.recintoId);
+  const Recinto = await RecintoRef.get();
+  if (!Recinto.exists) {
+    console.log('No such document!');
+  } else {
+    dataRecinto=Recinto.data();
+  }
+  //console.log('Recinto data:', dataRecinto);
+
+  let NumObjet0 = Object.keys(tickets);
+  data.seguro ? "":data.seguroPrice="0.00" ;
+
+  for (var i = 0; i < NumObjet0.length; i++) {
+    console.log('longituddddd---->>',tickets[i].dbstring)
+    try {
+      await QRCode.toFile(`./views/images/imgQR${i}.jpg`,tickets[i].dbstring);
+    } catch (err) {
+      console.error('al generar el QR-->',err)
+    }
+
+    console.log("Data1 ----->",dataEvento)
+    console.log("Data2 _____>",dataRecinto)
+    console.log("Data3 =====>",tickets)
+
+    let pagoTotal=parseFloat((tickets[i].zonaPrice),10)+
+                  parseFloat((tickets[i].zonaGDG),10)+
+                  parseFloat((data.seguroPrice),10);
+
+    doc.addPage()
+    doc.image('views/images/logo.png', 50, 50, {width: 100});
+    doc.image(`./views/images/imgQR${i}.jpg`, 430, 220, {width: 100});
+    doc.fontSize(5).text(tickets[i].dbstring,440,315);
+    doc.fontSize(20).text(dataEvento.name+'-'+dataRecinto.province,50,130,{ align: 'left'});
+    doc.fontSize(18).text(dataRecinto.name,50,150,{ align: 'left'});
+    doc.fontSize(14).text(dataRecinto.address,50,170,{ align: 'left'});
+    doc.text(dataRecinto.location,50,190,{ align: 'left'});
+
+    doc.text(`Fecha: ${parseDate(dataEvento.unixDateStart)} `+ ` Hora: ${dataEvento.hour}`,50,230,{ align: 'left'});
+    doc.text(`Zona: ${tickets[i].zonaName}  Asiento: ${tickets[i].seatInfo}`,50,250,{ align: 'left'});
+    
+    doc.text(`Precio: ${pagoTotal.toFixed(2)}€`+`  Entrada: ${tickets[i].unit}/`+`${tickets[i].total}`,50,280,{ align: 'left'});
+    doc.text(`(Entrada: ${tickets[i].zonaPrice}€ + Gastos: ${tickets[i].zonaGDG}€ + Seguro: ${data.seguroPrice}€ )`,50,300,{ align: 'left'});
+    const imagenEvent = await fetchImage(dataEvento.webImage);
+    doc.image(imagenEvent, 50, 350,{width: 150});
+    doc.fontSize(8).text(`1) Es obligatorio para todos los asistentes llevar consigo el DNI. 2) Está reservado el derecho de admisión(Ley 17/97). 3)El horario de inicio y de apertura de puertas podrán sufrir cambios para cumplir con la normativa vigente en relación al Covid-19. 4) No se aceptaran cambios ni devoluciones. 5) La localidad adquirida da derecho a asistir al evento que corresponde y en la butaca/zona asignada. La suspension de dicho evento lleva consigo exclusivamente la devolucion del importe de la entrada(excluidos los gastos de gestión). 6) Es potestad de la organización permitir la entrada al recinto una vez comenzado el evento. 7) En caso de suspensión del evento, la organización se compromete a la devolución del importe de la entrada en el plazo máximo de 15 días hábiles a partir de la fecha del anuncio de la suspensión. 8) No será objeto de devolución aquellos supuestos en los que la suspensión o modificación se produjera una vez comenzado el evento o actividad recreativa y fuera por causa de fuerza mayor. Las malas condiciones climatológicas no dan derecho a devolución de la entrada. 9) Los menores de edad que tengan entre 0 y 13 años, ambos inclusive, podrán acceder al concierto acompañados por su padre/madre/tutor legal y presentar esta autorización correspondiente en el acceso al recinto. Los menores de edad que tengan entre 14 y 15 años, ambos inclusive, podrán acceder al concierto y presentando la autorización firmada por su padre/madre/tutor legal. 10) Cualquier entrada rota o con indicios de falsificación autorizará al organizador a privar a su portador del acceso al evento. 11) La organización del evento no se hace responsable de las entradas robadas. 12) Queda prohibido el acceso al recinto con cámara de foto y/o video (sea doméstica o profesional).Queda prohibido la utilización del flash para la realización de fotos con móviles. El incumplimiento de esta norma puede acarrear la expulsión del recinto sin derecho a devolución del importe de la entrada. 13) Queda prohibido introducir alcohol, sustancias ilegales, armas u objetos peligrosos. 14) Queda limitada la entrada y/o permanencia en el evento a toda persona que se encuentre en estado de embriaguez. 15) Todo asistente podrá ser sometido a un registro por el equipo de seguridad en el acceso al evento, siguiendo la normativa de Ley de Espectáculos Públicos y Seguridad Privada. 16) Salvo que se indique lo contrario a través de cartel informativo en el recinto, no está permitida la entrada de comida ni bebida del exterior salvo botella de agua pequeña (33cl) a la que se le quitará el tapón en el control de acceso.`
+    ,50,500,{ align: 'justify'});
+  }
+  doc.end();
+  //console.log('pdfCreado')
+
+  try {
+    for (var i = 0; i < NumObjet0.length; i++) {
+      fs.unlinkSync(`./views/images/imgQR${i}.jpg`)
+      console.log('QR removed')
+    }
+  } catch(err) {
+    console.error('Something wrong happened removing the QR', err)
+  }
+  console.log('1. se genera el QR y el PDF')
+  return true
+}
+
 const addCantTotal = async(data) =>{
   let tickets=data.carrito
   let NumObjet0 = Object.keys(tickets)
@@ -372,7 +520,41 @@ const addCantTotal = async(data) =>{
   buyTicket(data);
 }
 
-
+const executeTimer = (eventoId, entradasOBJ) => {
+  console.log("llamando a los timers")
+  setTimeout(async () => {
+    console.log("Entrando en primer Timer", eventoId)
+    const entradaStatus = await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Entradas').doc(entradasOBJ[0].dbid).get()
+    
+    if (entradaStatus.data().estado === 'Reservado') {
+      console.log("estado reservado")
+      entradasOBJ.forEach(async (entrada) => {
+        await db
+        .collection('Eventos').doc(eventoId)
+        .collection('Entradas').doc(entrada.dbid)
+        .update({estado: 'Libre'})
+      })
+    } else if (entradaStatus.data().estado === 'Pendiente') {
+      console.log("estado if pendiente")
+      setTimeout(async () => {
+        const entradaStatus = await db
+        .collection('Eventos').doc(eventoId)
+        .collection('Entradas').doc(entradasOBJ[0].dbid).get()
+        if (entradaStatus.data().estado === 'Pendiente') {
+          console.log("estado pendiente clausula")
+          entradasOBJ.forEach(async (entrada) => {
+            await db
+          .collection('Eventos').doc(eventoId)
+          .collection('Entradas').doc(entrada.dbid)
+          .update({estado: 'Libre'})
+          })
+        }
+      }, 300000/*300000*/)
+    }
+  }, 600000/*600000*/ )
+}
 // endpoint ticket comprado
 app.post('/ticket/v1/bought1',(req,res)=>{
   const data = req.body;
@@ -382,11 +564,297 @@ app.post('/ticket/v1/bought1',(req,res)=>{
   res.json({status:`ok`,email:data.cliente.email})
 })
 
+app.post('/api/v1', async (req, res) => {
+  const getOrder = await db.collection('TransaccionesN').doc('Contador').get()
+  const tpvOrder = Number(getOrder.data().Numero)
+  const totalZerosN = 12 - String(tpvOrder).length
+  const newOrder = '0'.repeat(totalZerosN) + String(tpvOrder + 1) 
+  const setOder = await db.collection('TransaccionesN').doc('Contador').set({Numero: newOrder})
+  const redsys = new RedsysAPI()
+  const payload = JSON.parse(req.body.payload)
+  const carrito = payload.carrito
+  const totalPrice = payload.totalPrice
+  const unitPrice = payload.unitPrice
+  const seguro = payload.seguro ? payload.seguro: 0
+  const seguroPrice = payload.seguroPrice ? payload.seguroPrice : 0
+  const direccionIP = payload.direccionIP
+  const eventoId = payload.eventoId
+  const quantity = payload.quantity
+  const infoSeats = payload.info
+  const cliente = payload.cliente
 
+  const carritoActualizado = carrito.map(ticket => {
+    ticket.estado = 'Reservado'
+    return ticket
+  })
+  carrito.forEach(async (ticket) => {
+    await db
+          .collection('Eventos').doc(eventoId)
+          .collection('Entradas').doc(ticket.dbid)
+          .update({estado: 'Pendiente'})
+  })
+  const transactionId = await db
+  .collection('Eventos').doc(eventoId)
+  .collection('Transactions').add({
+    carrito: carritoActualizado,
+    cliente: cliente,
+    dateTransaction: Math.floor(new Date().getTime() / 1000),
+    direccionIP: direccionIP,
+    eventoId: eventoId,
+    seguro: seguro,
+    seguroPrice: seguroPrice,
+    sellerId: 'false',
+    statusTransaction: 'Reservado',
+    transactionType: 'Web',
+    tpvOrder: newOrder
+  })
+
+  const setLog = await db.collection('Eventos').doc(eventoId)
+  .collection('Transactions').doc(transactionId.id)
+  .collection('Logs').add({
+    dateUnix: Math.floor(new Date().getTime() / 1000),
+    executorFunction: "server",
+    placeIPBuy: direccionIP,
+    type: 'Pendiente',
+  })
+  const transactionTPV = await db
+  .collection('TransactionTPV')
+  .doc(newOrder).set({
+    eventoId: eventoId,
+    orderTPV: newOrder,
+    unixDate: Math.floor(new Date().getTime() / 1000)
+  })
+  const setPendiente = await db.collection('Eventos').doc(eventoId)
+  .collection('Entradas').doc(transactionId.id)
+  .collection('Logs').add({
+    dateUnix: Math.floor(new Date().getTime() / 1000),
+    executorFunction: "server",
+    placeIPBuy: direccionIP,
+    type: 'Pendiente',
+  })
+
+  const formatedPrice = Intl.NumberFormat('es-ES', {style:'currency', currency:'EUR'}).format(totalPrice)
+  const ammount = Number(formatedPrice.replace(/[\,\€]/g, ''))
+  
+  redsys.setParameter('DS_MERCHANT_AMOUNT', ammount);
+  redsys.setParameter('DS_MERCHANT_ORDER', newOrder);
+  redsys.setParameter('DS_MERCHANT_MERCHANTCODE', '351796214');
+  redsys.setParameter('DS_MERCHANT_PRODUCTDESCRIPTION', `Evento ID: ${eventoId}, Entradas: ${quantity}, Asientos: ${infoSeats}`);
+  redsys.setParameter('DS_MERCHANT_CURRENCY', '978');
+  redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '0');
+  redsys.setParameter('DS_MERCHANT_TERMINAL', '2');
+  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'http://www.dentralia.com/notification');
+  redsys.setParameter('DS_MERCHANT_URLOK', `http://www.dentralia.com/ok`);
+  redsys.setParameter('DS_MERCHANT_URLKO', 'http://www.dentralia.com/ko');
+
+  const signatureVersion = 'HMAC_SHA256_V1'
+  const key = 'sq7HjrUOBfKmC576ILgskD5srU870gJ7'
+  const params = redsys.createMerchantParameters();
+  const signature = redsys.createMerchantSignature(key);
+  
+  const uriRedsys = 'https://sis-t.redsys.es:25443/sis/realizarPago'
+  res.write(`<form name="from" id="autosubmit" action="${uriRedsys}" method="POST">
+	<input type="hidden" name="Ds_MerchantParameters" value="${params}"/>
+	<input type="hidden" name="Ds_SignatureVersion" value="${signatureVersion}"/>
+	<input type="hidden" name="Ds_Signature" value="${signature}"/>
+  </form><script>document.getElementById('autosubmit').submit()</script>
+  `);
+
+  res.end();
+})
+
+app.post('/api/v1/timer', (req, res) => {
+  const {eventoId, entradasOBJ} = req.body
+  // console.log(req.body)
+  executeTimer(eventoId, entradasOBJ)
+  res.status(200).send('ok')
+})
+
+app.post('/ok', (req, res) => {
+  const body = req.body
+  console.log(body)
+  res.status(200).send('OK')
+})
+
+app.post('/ko', (req,res) => {
+  const body = req.body
+  console.log(body)
+  res.status(403).send('KO')
+})
+app.post('/notification', async (req,res) => {
+  let transactionsDoc = {}
+  let clientData = {}
+  const redsys = new RedsysAPI()
+  const {
+    Ds_SignaruteVersion,
+    Ds_MerchantParameters,
+    Ds_Signature } = req.body
+
+  const decodedParams = redsys.decodeMerchantParameters(Ds_MerchantParameters)
+  const orderTPV = decodedParams.Ds_Order
+  if (Number(decodedParams.Ds_Response) > 100) {
+    console.log(decodedParams)
+    res.status(203).send('Fail')
+  } else if (decodedParams.Ds_Response == '0900') {
+    console.log("OK!!!!!!")
+    const getId = await db.collection('TransactionTPV').doc(orderTPV).get()
+    const eventoId = getId.data().eventoId
+    const getTransaction = await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Transactions').where('tpvOrder', '==', orderTPV).get()
+    getTransaction.forEach((doc) => {
+      transactionsDoc = doc.data()
+      transactionsDoc.id = doc.id
+      clientData = doc.data().cliente
+    })
+    sentDevolution(transactionsDoc)
+  } else {
+    const getId = await db.collection('TransactionTPV').doc(orderTPV).get()
+    const eventoId = getId.data().eventoId
+
+    const getTransaction = await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Transactions').where('tpvOrder', '==', orderTPV).get()
+    getTransaction.forEach((doc) => {
+      transactionsDoc = doc.data()
+      transactionsDoc.id = doc.id
+      clientData = doc.data().cliente
+    })
+    addCantTotal(transactionsDoc)
+    const updateTransaction = await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Transactions').doc(transactionsDoc.id)
+    .update({
+      carrito: transactionsDoc.carrito.map(ticket => ticket.estado = 'Vendido')
+    })
+    const setVendido = await db.collection('Eventos').doc(eventoId)
+    .collection('Transactions').doc(transactionsDoc.id)
+    .collection('Logs').add({
+      dateUnix: Math.floor(new Date().getTime() / 1000),
+      executorFunction: 'RedSys',
+      placeIPBuy: transactionsDoc.direccionIP,
+      type: 'Vendido'
+    })
+    const updateEntradas = transactionsDoc.carrito.forEach(async (obj) => {
+      await db
+      .collection('Eventos').doc(eventoId)
+      .collection('Entradas').doc(obj.dbid)
+      .update({
+        estado: 'Vendido',
+        tpvOrder: decodedParams.Ds_Order,
+        price: decodedParams.Ds_Amount
+      })
+    })
+
+    console.log(decodedParams)
+    res.status(403).send(decodedParams)
+  }
+})
+
+app.post('/api/v1/devolution', (req, res) => {
+  const redsys = new RedsysAPI()
+  const payload = req.body
+  const tpvOrderDB = payload.tpvOrder
+  const amountDB = payload.price
+  
+  const eventoId = payload.eventoId
+  const quantity = payload.quantity
+  const infoSeats = payload.info
+  const cliente = payload.cliente
+
+  redsys.setParameter('DS_MERCHANT_AMOUNT', amountDB);
+  redsys.setParameter('DS_MERCHANT_ORDER', tpvOrderDB);
+  redsys.setParameter('DS_MERCHANT_MERCHANTCODE', '351796214');
+  redsys.setParameter('DS_MERCHANT_CURRENCY', '978');
+  redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '3');
+  redsys.setParameter('DS_MERCHANT_TERMINAL', '2');
+  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'http://www.dentralia.com/notification');
+  redsys.setParameter('DS_MERCHANT_URLOK', `http://www.dentralia.com/ok`);
+  redsys.setParameter('DS_MERCHANT_URLKO', 'http://www.dentralia.com/ko');
+
+  const signatureVersion = 'HMAC_SHA256_V1'
+  const key = 'sq7HjrUOBfKmC576ILgskD5srU870gJ7'
+  const params = redsys.createMerchantParameters();
+  const signature = redsys.createMerchantSignature(key);
+  console.log(params)
+  console.log(signature)
+  const uriRedsys = 'https://sis-t.redsys.es:25443/sis/realizarPago'
+  // fetch(uriRedsys, {
+  //   method: 'POST',
+  //   headers: {
+  //     'Content-Type': 'application/x-www-form-urlencoded'
+  //   },
+  //   body: {
+  //     signature: signature,
+  //     Ds_MerchantParameters: params,
+  //     signatureVersion: signatureVersion
+  //   }
+  // })
+  // .then(res => res)
+  // .then(data => console.log(data.body))
+
+  res.status(201).send(JSON.stringify({result: 'Enviado OK'}))
+})
+
+app.post('/api/v1/resendTicket', async (req, res) => {
+  let transactionsDoc = {}
+  const { eventoId, tpvOrder } = req.body
+  const getTransaction = await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Transactions').where('tpvOrder', '==', tpvOrder).get()
+    getTransaction.forEach((doc) => {
+      transactionsDoc = doc.data()
+      transactionsDoc.id = doc.id
+    })
+    let tickets= transactionsDoc.carrito
+    console.log(transactionsDoc)
+    let NumObjet0 = Object.keys(tickets)
+  for (var i = 0; i < NumObjet0.length; i++) {  
+    tickets[i].unit = i+1
+    tickets[i].total = NumObjet0.length
+  }
+  transactionsDoc.carrito = tickets
+  // console.log(transactionsDoc)
+  getPdfQr(transactionsDoc);
+  res.status(200).send("Correo enviado")
+})
+
+app.post('/api/v1/downloadTicket', async (req, res) => {
+  const params = req.body
+  let ticketInfo = ''
+  const retrieveData = await db
+  .collection('Eventos').doc(params.eventoId)
+  .collection('Transactions').where('tpvOrder', '==', params.tpvOrder).get()
+  retrieveData.forEach(async (query) => {
+    ticketInfo = query.data()
+    console.log("Entrando en ticketInfo")
+    const generatePDF = await downloadPdfQr(ticketInfo)
+    const file = `${__dirname}/views/images/output.pdf`
+    res.download(file, (err) => {
+      if(err) {
+        console.log(err)
+      }
+    })
+  })
+})
+
+app.post('/testDevolution', async (req, res) => {
+  let clientData = ''
+  let transactionsDoc = ''
+  const orderTPV = req.body.orderTPV
+  const getId = await db.collection('TransactionTPV').doc(orderTPV).get()
+    const eventoId = getId.data().eventoId
+    const getTransaction = await db
+    .collection('Eventos').doc(eventoId)
+    .collection('Transactions').where('tpvOrder', '==', orderTPV).get()
+    getTransaction.forEach((doc) => {
+      transactionsDoc = doc.data()
+      transactionsDoc.id = doc.id
+      clientData = doc.data().cliente
+    })
+    sentDevolution(transactionsDoc)
+  res.status(200).send("OK!")
+})
 const PORT = process.env.PORT || 4242
 
-/*https.createServer({
-  cert:fs.readFileSync('mi_certificado.crt'),
-  key:fs.readFileSync('mi_certificado.key')
-  },app).listen(PORT, () => console.log(`Running on port ${PORT}`));*/
 const server = app.listen(PORT, () => console.log(`Running on port ${PORT}`));
