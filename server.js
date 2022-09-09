@@ -762,15 +762,15 @@ app.post('/api/v1/devolution', (req, res) => {
   const infoSeats = payload.info
   const cliente = payload.cliente
 
-  redsys.setParameter('DS_MERCHANT_AMOUNT', amountDB);
-  redsys.setParameter('DS_MERCHANT_ORDER', tpvOrderDB);
-  redsys.setParameter('DS_MERCHANT_MERCHANTCODE', '351796214');
-  redsys.setParameter('DS_MERCHANT_CURRENCY', '978');
-  redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '3');
-  redsys.setParameter('DS_MERCHANT_TERMINAL', '2');
-  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'http://www.dentralia.com/notification');
-  redsys.setParameter('DS_MERCHANT_URLOK', `http://www.dentralia.com/ok`);
-  redsys.setParameter('DS_MERCHANT_URLKO', 'http://www.dentralia.com/ko');
+  redsys.setParameter('DS_MERCHANT_AMOUNT', amountDB); // Monto de la transaccion sin comas, con los decimales dentro del numero EJ 14,95 => 1495 | 21,00 => 2100
+  redsys.setParameter('DS_MERCHANT_ORDER', tpvOrderDB); // Numero de orden recibido
+  redsys.setParameter('DS_MERCHANT_MERCHANTCODE', '351796214'); // Codigo del banco
+  redsys.setParameter('DS_MERCHANT_CURRENCY', '978'); // Tipo de moneda EURO
+  redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '3'); // TIpo de transaccion DEVOLUCION
+  redsys.setParameter('DS_MERCHANT_TERMINAL', '2'); // Terminal DENTRALIA
+  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'http://www.dentralia.com/notification'); // Endpoint al que apunta para notificar la operacion
+  redsys.setParameter('DS_MERCHANT_URLOK', `http://www.dentralia.com/ok`); // Pagina de redireccionamiento exitoso
+  redsys.setParameter('DS_MERCHANT_URLKO', 'http://www.dentralia.com/ko'); // Pagina de redireccionamiento no exitoso
 
   const signatureVersion = 'HMAC_SHA256_V1'
   const key = 'sq7HjrUOBfKmC576ILgskD5srU870gJ7'
