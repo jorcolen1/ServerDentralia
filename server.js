@@ -14,6 +14,46 @@ const PDFDocument = require('pdfkit');
 var QRCode = require('qrcode')
 const fetch = require('node-fetch');
 const RedsysAPI = require('redsys-api')
+const nodeCron = require('node-cron')
+
+nodeCron.schedule('59 59 23 * * *', async () => {
+  async function deleteCollection(db, collectionPath, batchSize) {
+    const collectionRef = db.collection(collectionPath);
+    const query = collectionRef.orderBy('__name__').limit(batchSize);
+  
+    return new Promise((resolve, reject) => {
+      deleteQueryBatch(db, query, resolve).catch(reject);
+    });
+  }
+  
+  async function deleteQueryBatch(db, query, resolve) {
+    const snapshot = await query.get();
+  
+    const batchSize = snapshot.size;
+    if (batchSize === 0) {
+      // When there are no documents left, we are done
+      resolve();
+      return;
+    }
+  
+    // Delete documents in a batch
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+    await batch.commit();
+  
+    // Recurse on the next process tick, to avoid
+    // exploding the stack.
+    process.nextTick(() => {
+      deleteQueryBatch(db, query, resolve);
+    });
+  }
+  const batchSize = await db.collection('MonitorRT').get()
+
+  await deleteCollection(db, 'MonitorRT', batchSize.size)
+})
+
 
 const app = express();
 app.use(express.static('public'));
@@ -744,7 +784,28 @@ app.post('/notification', async (req,res) => {
         price: decodedParams.Ds_Amount
       })
     })
-
+    const transactionData = {
+      gdgT:transactionsDoc.carrito.reduce((a,b) => {a + b.zonaGDG}, 0),
+      zonasT:transactionsDoc.carrito.reduce((a,b) => {a + b.zonaName}, 0),
+      seguro:transactionsDoc.carrito.reduce((a,b) => {
+        if (b.seguro) {
+          a + b.seguroPrice
+        } else return a
+      }, 0),
+      cantidad: transactionsDoc.carrito.length()
+  }
+    const eventData = db.collection('Eventos').doc(eventoId).get()
+    const {
+      ventaGdgT,
+      ventaZonasT,
+      ventaSeguroT} = eventData.data()
+    
+    const updateDatosEstadisticas = await db.collection('Eventos').doc(eventoId).update({
+      ventaGdgT: (Number(ventaGdgT) + Number(transactionData.gdgT)),
+      ventaZonasT: (Number(ventaZonasT) + Number(transactionData.zonasT)),
+      ventaSeguroT: (Number(ventaSeguroT) + Number(transactionData.seguroT)),
+      ventaOnlineT: (Number(ventaOnlineT)+ Number(transactionData.cantidad)),
+    })
     console.log(decodedParams)
     res.status(403).send(decodedParams)
   }
@@ -841,9 +902,10 @@ app.post('/api/v1/resendTicket', async (req, res) => {
   res.status(200).send("Correo enviado")
 })
 
-app.post('/api/v1/downloadTicket', async (req, res) => {
+app.post('/api/v1/downloadTicket', async (req, res, next) => {
   const params = req.body
   let ticketInfo = ''
+  console.log(params.tpvOrder, params.eventoId)
   const retrieveData = await db
   .collection('Eventos').doc(params.eventoId)
   .collection('Transactions').where('tpvOrder', '==', params.tpvOrder).get()
@@ -852,12 +914,22 @@ app.post('/api/v1/downloadTicket', async (req, res) => {
     console.log("Entrando en ticketInfo")
     const generatePDF = await downloadPdfQr(ticketInfo)
     const file = `${__dirname}/views/images/output.pdf`
-    res.download(file, (err) => {
-      if(err) {
-        console.log(err)
-      }
-    })
+    // res.download(file)
+    res.send({uri:'/api/v1/downloadTicketRedirected'})
+    // const stat = fs.statSync(file)
+    // console.log("Stat size", stat.size)
+    // res.writeHead(200, {
+    //   'Content-Type': 'application/pdf',
+    //   'Content-Length': stat.size
+    // })
+
+    // const readStream = fs.createReadStream(file)
+    // readStream.pipe(res)
   })
+})
+app.get('/api/v1/downloadTicketRedirected', (req, res) => {
+  const file = `${__dirname}/views/images/output.pdf`
+  res.download(file)
 })
 
 app.post('/testDevolution', async (req, res) => {
