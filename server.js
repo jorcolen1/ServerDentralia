@@ -800,12 +800,17 @@ app.post('/notification', async (req,res) => {
       ventaZonasT,
       ventaSeguroT,
       ventaOnlineT,} = eventData.data()
-    
+    console.log({
+      ventaGdgT: Number(ventaGdgT) + Number(transactionData.gdgT),
+      ventaZonasT: Number(ventaZonasT) + Number(transactionData.zonasT),
+      ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
+      ventaOnlineT: Number(ventaOnlineT)+ 1,
+    })
     const updateDatosEstadisticas = await db.collection('Eventos').doc(eventoId).update({
-      ventaGdgT: (Number(ventaGdgT) + Number(transactionData.gdgT)),
-      ventaZonasT: (Number(ventaZonasT) + Number(transactionData.zonasT)),
-      ventaSeguroT: (Number(ventaSeguroT) + Number(transactionData.seguroT)),
-      ventaOnlineT: (Number(ventaOnlineT)+ Number(transactionData.cantidad)),
+      ventaGdgT: Number(ventaGdgT) + Number(transactionData.gdgT),
+      ventaZonasT: Number(ventaZonasT) + Number(transactionData.zonasT),
+      ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
+      ventaOnlineT: Number(ventaOnlineT)+ 1,
     })
     console.log(decodedParams)
     res.status(403).send(decodedParams)
