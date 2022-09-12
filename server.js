@@ -798,7 +798,8 @@ app.post('/notification', async (req,res) => {
     const {
       ventaGdgT,
       ventaZonasT,
-      ventaSeguroT} = eventData.data()
+      ventaSeguroT,
+      ventaOnlineT,} = eventData.data()
     
     const updateDatosEstadisticas = await db.collection('Eventos').doc(eventoId).update({
       ventaGdgT: (Number(ventaGdgT) + Number(transactionData.gdgT)),
