@@ -794,7 +794,7 @@ app.post('/notification', async (req,res) => {
       }, 0),
       cantidad: transactionsDoc.carrito.length
   }
-    const eventData = db.collection('Eventos').doc(eventoId).get()
+    const eventData = await db.collection('Eventos').doc(eventoId).get()
     const {
       ventaGdgT,
       ventaZonasT,
