@@ -794,6 +794,10 @@ app.post('/notification', async (req,res) => {
       }, 0),
       cantidad: transactionsDoc.carrito.length
   }
+  console.log(transactionData)
+  console.log("----------")
+  console.log(transactionsDoc.carrito)
+  console.log("----------")
     const eventData = await db.collection('Eventos').doc(eventoId).get()
     const {
       ventaGdgT,
@@ -815,7 +819,7 @@ app.post('/notification', async (req,res) => {
     //   ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
     //   ventaOnlineT: Number(ventaOnlineT)+ 1,
     // })
-    console.log(decodedParams)
+    // console.log(decodedParams)
     res.status(403).send(decodedParams)
   }
 })
