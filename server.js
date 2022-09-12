@@ -785,9 +785,9 @@ app.post('/notification', async (req,res) => {
       })
     })
     const transactionData = {
-      gdgT:transactionsDoc.carrito.reduce((a,b) => {a + b.zonaGDG}, 0),
-      zonasT:transactionsDoc.carrito.reduce((a,b) => {a + b.zonaName}, 0),
-      seguro:transactionsDoc.carrito.reduce((a,b) => {
+      gdgT:transactionsDoc.carrito.reduce((a, b) => a + b.zonaGDG, 0),
+      zonasT:transactionsDoc.carrito.reduce((a, b) => a + b.zonaPrice, 0),
+      seguro:transactionsDoc.carrito.reduce((a, b) => {
         if (b.seguro) {
           a + b.seguroPrice
         } else return a
