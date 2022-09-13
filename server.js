@@ -764,7 +764,10 @@ app.post('/notification', async (req,res) => {
     .collection('Eventos').doc(eventoId)
     .collection('Transactions').doc(transactionsDoc.id)
     .update({
-      carrito: transactionsDoc.carrito.map(ticket => ticket.estado = 'Vendido')
+      carrito: transactionsDoc.carrito.map(ticket => {
+        ticket.estado = 'Vendido'
+        return ticket
+      })
     })
     const setVendido = await db.collection('Eventos').doc(eventoId)
     .collection('Transactions').doc(transactionsDoc.id)
@@ -785,11 +788,11 @@ app.post('/notification', async (req,res) => {
       })
     })
     const transactionData = {
-      gdgT:transactionsDoc.carrito.reduce((a, b) => a + b.zonaGDG, 0),
-      zonasT:transactionsDoc.carrito.reduce((a, b) => a + b.zonaPrice, 0),
+      gdgT:transactionsDoc.carrito.reduce((a, b) => a + Number(b.zonaGDG), 0),
+      zonasT:transactionsDoc.carrito.reduce((a, b) => a + Number(b.zonaPrice), 0),
       seguroT:transactionsDoc.carrito.reduce((a, b) => {
         if (b.seguro) {
-          a + b.seguroPrice
+          return a + Number(b.seguroPrice)
         } else return a
       }, 0),
       cantidad: transactionsDoc.carrito.length
@@ -807,19 +810,13 @@ app.post('/notification', async (req,res) => {
     console.log("----------")
     console.log(transactionData.gdgT, transactionData.zonasT, transactionData.seguroT)
     console.log("----------")
-    console.log({
+    const updateDatosEstadisticas = await db.collection('Eventos').doc(eventoId).update({
       ventaGdgT: Number(ventaGdgT) + Number(transactionData.gdgT),
       ventaZonasT: Number(ventaZonasT) + Number(transactionData.zonasT),
       ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
       ventaOnlineT: Number(ventaOnlineT)+ 1,
     })
-    // const updateDatosEstadisticas = await db.collection('Eventos').doc(eventoId).update({
-    //   ventaGdgT: Number(ventaGdgT) + Number(transactionData.gdgT),
-    //   ventaZonasT: Number(ventaZonasT) + Number(transactionData.zonasT),
-    //   ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
-    //   ventaOnlineT: Number(ventaOnlineT)+ 1,
-    // })
-    // console.log(decodedParams)
+    console.log(decodedParams)
     res.status(403).send(decodedParams)
   }
 })
