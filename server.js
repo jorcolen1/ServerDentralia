@@ -14,16 +14,54 @@ const PDFDocument = require('pdfkit');
 var QRCode = require('qrcode')
 const fetch = require('node-fetch');
 const RedsysAPI = require('redsys-api')
+const nodeCron = require('node-cron')
 
-//var html_to_pdf = require('html-pdf-node');
-//const { dictionary } = require('pdfkit/js/page');
-//comment
+nodeCron.schedule('59 59 23 * * *', async () => {
+  async function deleteCollection(db, collectionPath, batchSize) {
+    const collectionRef = db.collection(collectionPath);
+    const query = collectionRef.orderBy('__name__').limit(batchSize);
+  
+    return new Promise((resolve, reject) => {
+      deleteQueryBatch(db, query, resolve).catch(reject);
+    });
+  }
+  
+  async function deleteQueryBatch(db, query, resolve) {
+    const snapshot = await query.get();
+  
+    const batchSize = snapshot.size;
+    if (batchSize === 0) {
+      // When there are no documents left, we are done
+      resolve();
+      return;
+    }
+  
+    // Delete documents in a batch
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+    await batch.commit();
+  
+    // Recurse on the next process tick, to avoid
+    // exploding the stack.
+    process.nextTick(() => {
+      deleteQueryBatch(db, query, resolve);
+    });
+  }
+  const batchSize = await db.collection('MonitorRT').get()
+
+  await deleteCollection(db, 'MonitorRT', batchSize.size)
+})
+
+
 const app = express();
 app.use(express.static('public'));
 app.use(express.json());//servidor entiende datos en formato JSON
 app.use(express.urlencoded());//servidor entiende datos de formularios
 
-const YOUR_DOMAIN = 'https://.herokuapp.com';
+// const serverURI = 'https://dentraliaserver.herokuapp.com'
+// const serverURI = 'http://www.dentralia.com'
 //////0----------------------------------------------------------
 
 /* app.get('/hi',(req,res) => {
@@ -328,7 +366,7 @@ const sentDevolution = async(data) =>{
     to:data.cliente.email,//req.body.email , // list of receivers
     // subject: ` Aquí tienes tus entradas ${data.cliente.fullName}, de ${dataEvento.name} en ${dataRecinto.province}`,
     subject: `¡Devolucion exitosa!`,
-    template: 'email', // the name of the template file i.e email.handlebars
+    template: 'devolution', // the name of the template file i.e email.handlebars
     bcc: 'dentraliagestion@gmail.com',
     context:{
         name: data.cliente.fullName, // replace {{name}} 
@@ -377,7 +415,7 @@ const getPdfQr = async(data) =>{
   //console.log('Recinto data:', dataRecinto);
 
   let NumObjet0 = Object.keys(tickets);
-  data.seguro ? "":data.seguroPrice="0.00" ;
+  // data.seguro ? "":data.seguroPrice="0.00" ;
 
   for (var i = 0; i < NumObjet0.length; i++) {
     console.log('longituddddd---->>',tickets[i].dbstring)
@@ -387,10 +425,8 @@ const getPdfQr = async(data) =>{
       console.error('al generar el QR-->',err)
     }
 
-    
-    let pagoTotal=parseFloat((tickets[i].zonaPrice),10)+
-                  parseFloat((tickets[i].zonaGDG),10)+
-                  parseFloat((data.seguroPrice),10);
+      let pagoTotal = tickets[i].seguro ? parseFloat((tickets[i].zonaPrice),10) + parseFloat((tickets[i].zonaGDG),10) + parseFloat((tickets[i].seguroPrice),10)
+      : parseFloat((tickets[i].zonaPrice),10) + parseFloat((tickets[i].zonaGDG),10);
 
     doc.addPage()
     doc.image('views/images/logo.png', 50, 50, {width: 100});
@@ -405,7 +441,11 @@ const getPdfQr = async(data) =>{
     doc.text(`Zona: ${tickets[i].zonaName}  Asiento: ${tickets[i].seatInfo}`,50,250,{ align: 'left'});
     
     doc.text(`Precio: ${pagoTotal.toFixed(2)}€`+`  Entrada: ${tickets[i].unit}/`+`${tickets[i].total}`,50,280,{ align: 'left'});
-    doc.text(`(Entrada: ${tickets[i].zonaPrice}€ + Gastos: ${tickets[i].zonaGDG}€ + Seguro: ${data.seguroPrice}€ )`,50,300,{ align: 'left'});
+    if (tickets[i].seguro) {
+      doc.text(`(Entrada: ${tickets[i].zonaPrice}€ + Gastos: ${tickets[i].zonaGDG}€ + Seguro: ${tickets[i].seguroPrice}€ )`,50,300,{ align: 'left'});
+    } else {
+      doc.text(`(Entrada: ${tickets[i].zonaPrice}€ + Gastos: ${tickets[i].zonaGDG}€ )`,50,300,{ align: 'left'});
+    }
     const imagenEvent = await fetchImage(dataEvento.webImage);
     doc.image(imagenEvent, 50, 350,{width: 150});
     doc.fontSize(8).text(`1) Es obligatorio para todos los asistentes llevar consigo el DNI. 2) Está reservado el derecho de admisión(Ley 17/97). 3)El horario de inicio y de apertura de puertas podrán sufrir cambios para cumplir con la normativa vigente en relación al Covid-19. 4) No se aceptaran cambios ni devoluciones. 5) La localidad adquirida da derecho a asistir al evento que corresponde y en la butaca/zona asignada. La suspension de dicho evento lleva consigo exclusivamente la devolucion del importe de la entrada(excluidos los gastos de gestión). 6) Es potestad de la organización permitir la entrada al recinto una vez comenzado el evento. 7) En caso de suspensión del evento, la organización se compromete a la devolución del importe de la entrada en el plazo máximo de 15 días hábiles a partir de la fecha del anuncio de la suspensión. 8) No será objeto de devolución aquellos supuestos en los que la suspensión o modificación se produjera una vez comenzado el evento o actividad recreativa y fuera por causa de fuerza mayor. Las malas condiciones climatológicas no dan derecho a devolución de la entrada. 9) Los menores de edad que tengan entre 0 y 13 años, ambos inclusive, podrán acceder al concierto acompañados por su padre/madre/tutor legal y presentar esta autorización correspondiente en el acceso al recinto. Los menores de edad que tengan entre 14 y 15 años, ambos inclusive, podrán acceder al concierto y presentando la autorización firmada por su padre/madre/tutor legal. 10) Cualquier entrada rota o con indicios de falsificación autorizará al organizador a privar a su portador del acceso al evento. 11) La organización del evento no se hace responsable de las entradas robadas. 12) Queda prohibido el acceso al recinto con cámara de foto y/o video (sea doméstica o profesional).Queda prohibido la utilización del flash para la realización de fotos con móviles. El incumplimiento de esta norma puede acarrear la expulsión del recinto sin derecho a devolución del importe de la entrada. 13) Queda prohibido introducir alcohol, sustancias ilegales, armas u objetos peligrosos. 14) Queda limitada la entrada y/o permanencia en el evento a toda persona que se encuentre en estado de embriaguez. 15) Todo asistente podrá ser sometido a un registro por el equipo de seguridad en el acceso al evento, siguiendo la normativa de Ley de Espectáculos Públicos y Seguridad Privada. 16) Salvo que se indique lo contrario a través de cartel informativo en el recinto, no está permitida la entrada de comida ni bebida del exterior salvo botella de agua pequeña (33cl) a la que se le quitará el tapón en el control de acceso.`
@@ -689,7 +729,7 @@ app.post('/notification', async (req,res) => {
     Ds_SignaruteVersion,
     Ds_MerchantParameters,
     Ds_Signature } = req.body
-
+  console.log(req.body)
   const decodedParams = redsys.decodeMerchantParameters(Ds_MerchantParameters)
   const orderTPV = decodedParams.Ds_Order
   if (Number(decodedParams.Ds_Response) > 100) {
@@ -711,7 +751,6 @@ app.post('/notification', async (req,res) => {
   } else {
     const getId = await db.collection('TransactionTPV').doc(orderTPV).get()
     const eventoId = getId.data().eventoId
-
     const getTransaction = await db
     .collection('Eventos').doc(eventoId)
     .collection('Transactions').where('tpvOrder', '==', orderTPV).get()
@@ -725,7 +764,10 @@ app.post('/notification', async (req,res) => {
     .collection('Eventos').doc(eventoId)
     .collection('Transactions').doc(transactionsDoc.id)
     .update({
-      carrito: transactionsDoc.carrito.map(ticket => ticket.estado = 'Vendido')
+      carrito: transactionsDoc.carrito.map(ticket => {
+        ticket.estado = 'Vendido'
+        return ticket
+      })
     })
     const setVendido = await db.collection('Eventos').doc(eventoId)
     .collection('Transactions').doc(transactionsDoc.id)
@@ -745,60 +787,103 @@ app.post('/notification', async (req,res) => {
         price: decodedParams.Ds_Amount
       })
     })
-
+    const transactionData = {
+      gdgT:transactionsDoc.carrito.reduce((a, b) => a + Number(b.zonaGDG), 0),
+      zonasT:transactionsDoc.carrito.reduce((a, b) => a + Number(b.zonaPrice), 0),
+      seguroT:transactionsDoc.carrito.reduce((a, b) => {
+        if (b.seguro) {
+          return a + Number(b.seguroPrice)
+        } else return a
+      }, 0),
+      cantidad: transactionsDoc.carrito.length
+  }
+  
+    const eventData = await db.collection('Eventos').doc(eventoId).get()
+    const {
+      ventaGdgT,
+      ventaZonasT,
+      ventaSeguroT,
+      ventaOnlineT,} = eventData.data()
+      
+      console.log("----------")
+    console.log(ventaGdgT, ventaZonasT, ventaSeguroT, ventaOnlineT)
+    console.log("----------")
+    console.log(transactionData.gdgT, transactionData.zonasT, transactionData.seguroT)
+    console.log("----------")
+    const updateDatosEstadisticas = await db.collection('Eventos').doc(eventoId).update({
+      ventaGdgT: Number(ventaGdgT) + Number(transactionData.gdgT),
+      ventaZonasT: Number(ventaZonasT) + Number(transactionData.zonasT),
+      ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
+      ventaOnlineT: Number(ventaOnlineT)+ 1,
+    })
     console.log(decodedParams)
     res.status(403).send(decodedParams)
   }
 })
 
-app.post('/api/v1/devolution', (req, res) => {
+app.post('/api/v1/devolution', async (req, res) => {
   const redsys = new RedsysAPI()
+  const { transactionId, eventoId } = req.body
   const payload = req.body
   const tpvOrderDB = payload.tpvOrder
   const amountDB = payload.price
-  
-  const eventoId = payload.eventoId
-  const quantity = payload.quantity
-  const infoSeats = payload.info
-  const cliente = payload.cliente
-
-  redsys.setParameter('DS_MERCHANT_AMOUNT', amountDB);
-  redsys.setParameter('DS_MERCHANT_ORDER', tpvOrderDB);
-  redsys.setParameter('DS_MERCHANT_MERCHANTCODE', '351796214');
-  redsys.setParameter('DS_MERCHANT_CURRENCY', '978');
-  redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '3');
-  redsys.setParameter('DS_MERCHANT_TERMINAL', '2');
-  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'http://www.dentralia.com/notification');
-  redsys.setParameter('DS_MERCHANT_URLOK', `http://www.dentralia.com/ok`);
-  redsys.setParameter('DS_MERCHANT_URLKO', 'http://www.dentralia.com/ko');
+  redsys.setParameter('DS_MERCHANT_AMOUNT', amountDB); // Monto de la transaccion sin comas, con los decimales dentro del numero EJ 14,95 => 1495 | 21,00 => 2100
+  redsys.setParameter('DS_MERCHANT_ORDER', tpvOrderDB); // Numero de orden recibido
+  redsys.setParameter('DS_MERCHANT_MERCHANTCODE', '351796214'); // Codigo del banco
+  redsys.setParameter('DS_MERCHANT_CURRENCY', '978'); // Tipo de moneda EURO
+  redsys.setParameter('DS_MERCHANT_TRANSACTIONTYPE', '3'); // TIpo de transaccion DEVOLUCION
+  redsys.setParameter('DS_MERCHANT_TERMINAL', '2'); // Terminal DENTRALIA
+  redsys.setParameter('DS_MERCHANT_MERCHANTURL', 'http://www.dentralia.com/notification') //'http://www.dentralia.com/notification'); // Endpoint al que apunta para notificar la operacion
+  redsys.setParameter('DS_MERCHANT_URLOK', `http://www.dentralia.com/ok`); // Pagina de redireccionamiento exitoso
+  redsys.setParameter('DS_MERCHANT_URLKO', 'http://www.dentralia.com/ko'); // Pagina de redireccionamiento no exitoso
 
   const signatureVersion = 'HMAC_SHA256_V1'
   const key = 'sq7HjrUOBfKmC576ILgskD5srU870gJ7'
   const params = redsys.createMerchantParameters();
   const signature = redsys.createMerchantSignature(key);
-  console.log(params)
-  console.log(signature)
   const uriRedsys = 'https://sis-t.redsys.es:25443/sis/realizarPago'
-  // fetch(uriRedsys, {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/x-www-form-urlencoded'
-  //   },
-  //   body: {
-  //     signature: signature,
-  //     Ds_MerchantParameters: params,
-  //     signatureVersion: signatureVersion
-  //   }
-  // })
-  // .then(res => res)
-  // .then(data => console.log(data.body))
 
-  res.status(201).send(JSON.stringify({result: 'Enviado OK'}))
+  // const formData = {
+  //   'signature': signature,
+  //   'Ds_MerchantParameters': params,
+  //   'signatureVersion': signatureVersion
+  // }
+  // const formBody = []
+  // for (let property in formData) {
+  //   let encodedKey = encodeURIComponent(property)
+  //   let encodedValue = encodeURIComponent(formData[property])
+  //   formBody.push(encodedKey + '=' + encodedValue) 
+  // }
+  // const formattedData = formBody.join("&")
+  // console.log(formattedData)
+  const response = await fetch(uriRedsys, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({
+      'Ds_signature': signature,
+      'Ds_MerchantParameters': params,
+      'Ds_signatureVersion': signatureVersion,
+    })
+  })
+  const data = await response.text()
+  //   await db.collection('Eventos').doc(eventoId)
+  //   .collection('Transactions').doc(transactionId)
+  //   .collection('Logs').add({
+  //     dateUnix: Math.floor(new Date().getTime() / 1000),
+  //     executorFunction: 'server',
+  //     type: 'devolution'
+  //   })
+
+
+  res.status(201).send(JSON.stringify({result: 'Transaccion enviada correctamente'}))
 })
 
 app.post('/api/v1/resendTicket', async (req, res) => {
   let transactionsDoc = {}
-  const { eventoId, tpvOrder } = req.body
+  const { eventoId, tpvOrder, cliente } = req.body
+  console.log(cliente)
   const getTransaction = await db
     .collection('Eventos').doc(eventoId)
     .collection('Transactions').where('tpvOrder', '==', tpvOrder).get()
@@ -815,13 +900,22 @@ app.post('/api/v1/resendTicket', async (req, res) => {
   }
   transactionsDoc.carrito = tickets
   // console.log(transactionsDoc)
-  getPdfQr(transactionsDoc);
+  // getPdfQr(transactionsDoc);
+  const writeResendLog = await db.collection('Eventos').doc(eventoId)
+  .collection('Transactions').doc(transactionsDoc.id)
+  .collection('Logs').add({
+    dateUnix: Math.floor(new Date().getTime() / 1000),
+    executorFunction: 'server',
+    type: 'resend',
+    email: cliente.email
+  })
   res.status(200).send("Correo enviado")
 })
 
-app.post('/api/v1/downloadTicket', async (req, res) => {
+app.post('/api/v1/downloadTicket', async (req, res, next) => {
   const params = req.body
   let ticketInfo = ''
+  console.log(params.tpvOrder, params.eventoId)
   const retrieveData = await db
   .collection('Eventos').doc(params.eventoId)
   .collection('Transactions').where('tpvOrder', '==', params.tpvOrder).get()
@@ -830,12 +924,22 @@ app.post('/api/v1/downloadTicket', async (req, res) => {
     console.log("Entrando en ticketInfo")
     const generatePDF = await downloadPdfQr(ticketInfo)
     const file = `${__dirname}/views/images/output.pdf`
-    res.download(file, (err) => {
-      if(err) {
-        console.log(err)
-      }
-    })
+    // res.download(file)
+    res.send({uri:'/api/v1/downloadTicketRedirected'})
+    // const stat = fs.statSync(file)
+    // console.log("Stat size", stat.size)
+    // res.writeHead(200, {
+    //   'Content-Type': 'application/pdf',
+    //   'Content-Length': stat.size
+    // })
+
+    // const readStream = fs.createReadStream(file)
+    // readStream.pipe(res)
   })
+})
+app.get('/api/v1/downloadTicketRedirected', (req, res) => {
+  const file = `${__dirname}/views/images/output.pdf`
+  res.download(file)
 })
 
 app.post('/testDevolution', async (req, res) => {
