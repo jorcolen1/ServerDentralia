@@ -794,31 +794,31 @@ app.post('/notification', async (req,res) => {
       }, 0),
       cantidad: transactionsDoc.carrito.length
   }
-  console.log(transactionData)
-  console.log("----------")
-  console.log(transactionsDoc.carrito)
-  console.log("----------")
+  
     const eventData = await db.collection('Eventos').doc(eventoId).get()
     const {
       ventaGdgT,
       ventaZonasT,
       ventaSeguroT,
       ventaOnlineT,} = eventData.data()
-
+      
+      console.log("----------")
     console.log(ventaGdgT, ventaZonasT, ventaSeguroT, ventaOnlineT)
+    console.log("----------")
     console.log(transactionData.gdgT, transactionData.zonasT, transactionData.seguroT)
-    // console.log({
-    //   ventaGdgT: Number(ventaGdgT) + Number(transactionData.gdgT),
-    //   ventaZonasT: Number(ventaZonasT) + Number(transactionData.zonasT),
-    //   ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
-    //   ventaOnlineT: Number(ventaOnlineT)+ 1,
-    // })
-    const updateDatosEstadisticas = await db.collection('Eventos').doc(eventoId).update({
+    console.log("----------")
+    console.log({
       ventaGdgT: Number(ventaGdgT) + Number(transactionData.gdgT),
       ventaZonasT: Number(ventaZonasT) + Number(transactionData.zonasT),
       ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
       ventaOnlineT: Number(ventaOnlineT)+ 1,
     })
+    // const updateDatosEstadisticas = await db.collection('Eventos').doc(eventoId).update({
+    //   ventaGdgT: Number(ventaGdgT) + Number(transactionData.gdgT),
+    //   ventaZonasT: Number(ventaZonasT) + Number(transactionData.zonasT),
+    //   ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
+    //   ventaOnlineT: Number(ventaOnlineT)+ 1,
+    // })
     // console.log(decodedParams)
     res.status(403).send(decodedParams)
   }
