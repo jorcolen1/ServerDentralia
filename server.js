@@ -16,7 +16,7 @@ const fetch = require('node-fetch');
 const RedsysAPI = require('redsys-api')
 const nodeCron = require('node-cron')
 
-nodeCron.schedule('59 59 23 * * *', async () => {
+nodeCron.schedule('0,15,30,45 * * * *', async () => {
   async function deleteCollection(db, collectionPath, batchSize) {
     const collectionRef = db.collection(collectionPath);
     const query = collectionRef.orderBy('__name__').limit(batchSize);
@@ -54,7 +54,20 @@ nodeCron.schedule('59 59 23 * * *', async () => {
   await deleteCollection(db, 'MonitorRT', batchSize.size)
 })
 
-
+nodeCron.schedule('0,30 * * * *', async () => {
+  console.log("EJECUTANDO TAREAS DE CRON")
+  const getEventos = await db.collection('Eventos').get()
+  const actualTime = Math.floor(new Date().getTime() / 1000)
+  getEventos.forEach(async (doc) => {
+    const evento = doc.data()
+    evento.id = doc.id
+    if (actualTime >= evento.unixDateEndSell) {
+      const updateStatus = await db.collection('Eventos').doc(evento.id).update({
+        state: 'Terminado'
+      })
+    } else null
+  })
+})
 const app = express();
 app.use(express.static('public'));
 app.use(express.json());//servidor entiende datos en formato JSON
@@ -590,7 +603,7 @@ const addCantTotal = async(data) =>{
 const executeTimer = (eventoId, entradasOBJ) => {
   console.log("llamando a los timers")
   setTimeout(async () => {
-    console.log("Entrando en primer Timer", eventoId)
+    console.log("Entrando en primer Timer", eventoId, entradasOBJ)
     const entradaStatus = await db
     .collection('Eventos').doc(eventoId)
     .collection('Entradas').doc(entradasOBJ[0].dbid).get()
@@ -732,7 +745,6 @@ app.post('/api/v1', async (req, res) => {
 
 app.post('/api/v1/timer', (req, res) => {
   const {eventoId, entradasOBJ} = req.body
-  // console.log(req.body)
   executeTimer(eventoId, entradasOBJ)
   res.status(200).send('ok')
 })
