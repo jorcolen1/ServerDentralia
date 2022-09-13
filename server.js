@@ -787,7 +787,7 @@ app.post('/notification', async (req,res) => {
     const transactionData = {
       gdgT:transactionsDoc.carrito.reduce((a, b) => a + b.zonaGDG, 0),
       zonasT:transactionsDoc.carrito.reduce((a, b) => a + b.zonaPrice, 0),
-      seguro:transactionsDoc.carrito.reduce((a, b) => {
+      seguroT:transactionsDoc.carrito.reduce((a, b) => {
         if (b.seguro) {
           a + b.seguroPrice
         } else return a
@@ -813,12 +813,12 @@ app.post('/notification', async (req,res) => {
     //   ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
     //   ventaOnlineT: Number(ventaOnlineT)+ 1,
     // })
-    // const updateDatosEstadisticas = await db.collection('Eventos').doc(eventoId).update({
-    //   ventaGdgT: Number(ventaGdgT) + Number(transactionData.gdgT),
-    //   ventaZonasT: Number(ventaZonasT) + Number(transactionData.zonasT),
-    //   ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
-    //   ventaOnlineT: Number(ventaOnlineT)+ 1,
-    // })
+    const updateDatosEstadisticas = await db.collection('Eventos').doc(eventoId).update({
+      ventaGdgT: Number(ventaGdgT) + Number(transactionData.gdgT),
+      ventaZonasT: Number(ventaZonasT) + Number(transactionData.zonasT),
+      ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
+      ventaOnlineT: Number(ventaOnlineT)+ 1,
+    })
     // console.log(decodedParams)
     res.status(403).send(decodedParams)
   }
