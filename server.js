@@ -23,7 +23,7 @@ app.use(express.static('public'));
 app.use(express.json());//servidor entiende datos en formato JSON
 app.use(express.urlencoded());//servidor entiende datos de formularios
 
-
+const YOUR_DOMAIN = 'https://.herokuapp.com';
 //////0----------------------------------------------------------
 
 /* app.get('/hi',(req,res) => {
