@@ -168,7 +168,7 @@ const buyTicket = async(data) =>{
   //console.log('la peticion',data)
   let tickets=data.carrito
   let dataUnix = Math.round((new Date()).getTime() / 1000)
-  console.log('Antess<<<<<<<<<',data.carrito)
+  //console.log('Antess<<<<<<<<<',data.carrito)
   
   let NumObjet0 = Object.keys(tickets);
   for (var i = 0; i < NumObjet0.length; i++) {  
@@ -197,7 +197,7 @@ const buyTicket = async(data) =>{
 
   }
   data.carrito = tickets
-  console.log('Despues>>>>>>>>>',data.carrito)
+  //console.log('Despues>>>>>>>>>',data.carrito)
 
  
   let controlData={
@@ -224,7 +224,35 @@ const buyTicket = async(data) =>{
     executorFunction: 'server'
   });
 
-  console.log('3 se escribe la base de datos')
+  console.log('3. se escribio la base de datos')
+  const eventData = await db
+  .collection('Eventos').doc(data.eventoId).get()
+  const {
+    ventaGdgT,
+    ventaZonasT,
+    ventaSeguroT,
+    ventaOnlineT,} = eventData.data()
+  const transactionData = {
+    gdgT:dataAll.carrito.reduce((a, b) => a + Number(b.zonaGDG), 0),
+    zonasT:dataAll.carrito.reduce((a, b) => a + Number(b.zonaPrice), 0),
+    seguroT:dataAll.carrito.reduce((a, b) => {
+      if (b.seguro) {
+        return a + Number(b.seguroPrice)
+      } else return a
+    }, 0),
+    cantidad: dataAll.carrito.length
+  }
+  console.log(ventaGdgT, ventaZonasT, ventaSeguroT, ventaOnlineT)
+  console.log(transactionData.gdgT,'--', transactionData.zonasT, '--', transactionData.seguroT)
+  const updateDatosEstadisticas = await db.collection('Eventos').doc(data.eventoId).update({
+    ventaGdgT: Number(ventaGdgT) + Number(transactionData.gdgT),
+    ventaZonasT: Number(ventaZonasT) + Number(transactionData.zonasT),
+    ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
+    ventaOnlineT: Number(ventaOnlineT)+ 1,
+  })
+  
+  console.log('4. Actualizo las estadisticas')
+
 }
 
 //traer imagen de la web 
@@ -403,7 +431,7 @@ const getPdfQr = async(data) =>{
   } else {
     dataEvento=Evento.data();
   }
-  //console.log('Evento data:', dataEvento);
+  console.log('Evento data:', dataEvento);
 
   const RecintoRef = db.collection('Recintos').doc(dataEvento.recintoId);
   const Recinto = await RecintoRef.get();
@@ -437,7 +465,7 @@ const getPdfQr = async(data) =>{
     doc.fontSize(14).text(dataRecinto.address,50,170,{ align: 'left'});
     doc.text(dataRecinto.location,50,190,{ align: 'left'});
 
-    doc.text(`Fecha: ${parseDate(dataEvento.unixDateStart)} `+ ` Hora: ${dataEvento.hour}`,50,230,{ align: 'left'});
+    doc.text(`Fecha: ${parseDate(dataEvento.unixDateStart)} `+ ` Hora: ${dataEvento.hourStart}`,50,230,{ align: 'left'});
     doc.text(`Zona: ${tickets[i].zonaName}  Asiento: ${tickets[i].seatInfo}`,50,250,{ align: 'left'});
     
     doc.text(`Precio: ${pagoTotal.toFixed(2)}€`+`  Entrada: ${tickets[i].unit}/`+`${tickets[i].total}`,50,280,{ align: 'left'});
@@ -498,7 +526,7 @@ const downloadPdfQr = async(data) =>{
   data.seguro ? "":data.seguroPrice="0.00" ;
 
   for (var i = 0; i < NumObjet0.length; i++) {
-    console.log('longituddddd---->>',tickets[i].dbstring)
+    console.log('dbstring---->>',tickets[i].dbstring)
     try {
       await QRCode.toFile(`./views/images/imgQR${i}.jpg`,tickets[i].dbstring);
     } catch (err) {
@@ -805,7 +833,7 @@ app.post('/notification', async (req,res) => {
       ventaSeguroT,
       ventaOnlineT,} = eventData.data()
       
-      console.log("----------")
+    console.log("----------")
     console.log(ventaGdgT, ventaZonasT, ventaSeguroT, ventaOnlineT)
     console.log("----------")
     console.log(transactionData.gdgT, transactionData.zonasT, transactionData.seguroT)
