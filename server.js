@@ -250,7 +250,6 @@ const buyTicket = async(data) =>{
     ventaSeguroT: Number(ventaSeguroT) + Number(transactionData.seguroT),
     ventaOnlineT: Number(ventaOnlineT)+ 1,
   })
-  
   console.log('4. Actualizo las estadisticas')
 
 }
